@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-### Author: Monica Toft Hannani 
-### Last updated: 2020-11-26
+# Copyright (c) [2020] [Monica T. Hannani]
+# mhannani@ukaachen.de
+
 ''' Summarize V, D, J, C genes for each clonotype '''
 
 # Initialise
