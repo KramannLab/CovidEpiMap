@@ -2,11 +2,9 @@
 # mhannani@ukaachen.de
 
 
-#---- Per-sample clustering and integration of GEX and ADT library
+#---- Per-sample clustering and integration of GEX and ADT libraries
 
-# Install Seurat version 4 (beta)
 #remotes::install_github("satijalab/seurat", ref = "release/4.0.0")
-# Based on tutorial:
 # https://satijalab.org/seurat/v4.0/weighted_nearest_neighbor_analysis.html
 library(Seurat)
 library(SeuratData)
