@@ -61,7 +61,7 @@ for (patient in patients){
 
 
 	# ADT
-	# Do not use dextramer counts for dimenstional reduction (first 23 features)
+	# Do not use dextramer counts for dimensional reduction (first 23 features)
 	DefaultAssay(sc) = 'ADT'
 	VariableFeatures(sc) = rownames(sc[['ADT']])
 	sc = NormalizeData(sc, normalization.method = 'CLR', margin = 2, verbose = FALSE)
