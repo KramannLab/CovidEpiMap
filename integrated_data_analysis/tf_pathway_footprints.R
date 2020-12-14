@@ -4,6 +4,8 @@
 
 #---- TF activity inference with DoRothEA and pathway activity inference with PROGENy
 
+#devtools::install_github('saezlab/progeny')
+library(progeny)
 library(dorothea)
 library(dplyr)
 library(Seurat)
@@ -85,9 +87,10 @@ regulon = dorothea_regulon_human %>%
     })
 
 
+
 # Healthy vs active mild
 diff.indir = '~/sciebo/CovidEpiMap/integrated/diff_genes_for_dorothea/'
-out.dir =  '~/sciebo/CovidEpiMap/tf_activity_contrast/'
+out.dir =  '~/sciebo/CovidEpiMap/tf_pathway_activity/'
 case = 'active_mild'
 control = 'healthy'
 
@@ -134,9 +137,44 @@ pdf(file = paste0(out.dir, control, '_vs_',case, '.pdf'), width = 12, height = 6
 plot_dorothea(df = df, case = case, control = control)
 dev.off()
 
-
      
 
+#---- Run PROGENy  cell clusters
+
+cell.clusters = data.frame(cell = names(Idents(sc)), 
+							cell.type = as.character(Idents(sc)),
+							stringsAsFactors = FALSE)
+
+sc = progeny(sc, scale = FALSE, organism = 'Human', top = 500, 
+			perm = 1, return_assay = TRUE)
+
+sc = ScaleData(sc, assay = 'progeny')
+
+progeny.scores = as.data.frame(t(GetAssayData(sc, slot = 'scale.data',
+					assay = 'progeny'))) %>%
+				rownames_to_column('cell') %>%
+				gather(Pathway, Activity, -cell)
+
+progeny.scores = inner_join(progeny.scores, cell.clusters)
+
+summarized.progeny.scores = progeny.scores %>%
+							group_by(Pathway, cell.type) %>%
+							summarise(avg = mean(Activity), std = sd(Activity))
+
+summarized.progeny.df = summarized.progeny.scores %>%
+						dplyr::select(-std) %>%
+						spread(Pathway, avg) %>%
+						data.frame(row.names = 1, check.names = FALSE, stringsAsFactors = FALSE)
+
+
+pdf(file = paste0(outdir,'progeny_violin.pdf'), width = 17)
+for (gene in progeny.genes){
+	print(VlnPlot(sc, features = gene, 
+		group.by = 'integrated_annotations', 
+		pt.size = 0, split.by = 'condition',
+		assay = 'progeny', slot = 'scale.data'))
+}
+dev.off()
 
 
 
