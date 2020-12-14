@@ -66,3 +66,11 @@ genes = c('MIF', 'KLRK1')
 crosstalknet_report(Control = control, Case = case, Genes = genes, Indir = indir, Outdir = wkdir)
 
 
+# Recovered mild vs recovered severe
+control = 'recovered_mild'
+case = 'recovered_severe'
+genes = c('MIF', 'KLRK1')
+crosstalknet_report(Control = control, Case = case, Genes = genes, Indir = indir, Outdir = wkdir)
+
+
+

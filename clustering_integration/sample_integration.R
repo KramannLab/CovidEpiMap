@@ -10,7 +10,8 @@ library(dplyr)
 library(ggplot2)
 library(harmony)
 options(future.globals.maxSize = 30720*1024^2)
-source('../sc_source/sc_source.R')
+outdir = '~/sciebo/CovidEpiMap/integrated/'
+source('sc_source/sc_source.R')
 '%ni%' = Negate('%in%')
 
 
@@ -159,6 +160,39 @@ labs(y = 'Proportion', x = element_blank(), fill = 'Cell type') +
 theme_classic() +
 theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
 scale_fill_manual(values = cell.type.colors)
+dev.off()
+
+
+
+#---- Bar chart with TCR V genes in each cluster (show top 20 per cluster)
+
+Idents(sc.subset) = sc.subset$integrated_annotations
+
+
+pdf(file = paste0(outdir, 'plots/integrated_Tcells_TCRV_genes.pdf'), width = 12)
+for (cell.type in names(cell.type.colors)){
+	subset = subset(sc.subset, idents = cell.type)
+
+	# Get all TCR V genes
+	cell.table = data.frame(cell = colnames(subset), cluster = Idents(subset),
+						tcrv = subset$TCR_V_GENE)
+
+	# Get top 20 TCR V genes
+	plot.table = cell.table %>% 
+	group_by(tcrv) %>% 
+	count() %>% 
+	arrange(desc(n)) %>% 
+	as.data.frame %>% head(20)
+
+	print(ggplot(cell.table %>% filter(tcrv %in% plot.table$tcrv), 
+				aes(x = tcrv, fill = as.factor(cluster))) + 
+		geom_bar() + 
+		labs(y = 'Count', x = element_blank(), fill = 'Cell type') +
+		ggtitle(paste0(cell.type, ' (n = ', nrow(cell.table), ')')) +
+		theme_classic() +
+		theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+		scale_fill_manual(values = cell.type.colors[cell.type]))
+}
 dev.off()
 
 

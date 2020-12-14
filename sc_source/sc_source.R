@@ -116,7 +116,7 @@ correlation_heatmap = function(object, conditionVector, assay = 'RNA', cellTypeC
 
 
 #---- Differential gene expression function for integrated data
-get_markers = function(sc, condition, control, cell.type){
+get_markers = function(sc, condition, control, cell.type, only.sig = TRUE, adj.pval.cutoff = 0.05, logfc.threshold = 0.25, out.dir = 'diff_genes'){
   # Take care if no cells
   markers = data.frame()
   condition.subset = tryCatch(subset(sc, celltype.condition == paste(cell.type, condition)), 
@@ -126,8 +126,12 @@ get_markers = function(sc, condition, control, cell.type){
 
   if (ncol(condition.subset) > 20 & ncol(control.subset) > 20){
     markers = FindMarkers(sc, ident.1 = paste(cell.type, condition), 
-      ident.2 = paste(cell.type, control), min.pct = 0.25)
-    markers = markers[markers$p_val_adj < 0.05,]
+      ident.2 = paste(cell.type, control), min.pct = 0.25, logfc.threshold = logfc.threshold)
+
+    if (only.sig){
+      markers = markers[markers$p_val_adj < adj.pval.cutoff,]
+    }
+    
   
     markers$gene = rownames(markers)
     cols = colnames(markers)
@@ -136,7 +140,7 @@ get_markers = function(sc, condition, control, cell.type){
 
     if (nrow(markers) > 0){
       write.table(markers[,c('gene',cols[-6])], 
-        file = paste0('diff_genes/integrated.diff.genes.', cell.type.name,
+        file = paste0(out.dir, '/integrated.diff.genes.', cell.type.name,
           '.', condition, '.vs.', control, '.txt'),
         quote = FALSE, sep = '\t', row.names = FALSE)
     }
@@ -239,11 +243,80 @@ get_abundance = function(df, condition.vector){
 
 
 
+#---- TF activity inference with DoRothEA (regulon has to be built prior to this)
+run_dorothea = function(case, control, diff.indir, dorothea_regulon_human, regulon){
+  TF_activities_df = data.frame(tf = unique(dorothea_regulon_human$tf), 
+              row.names = unique(dorothea_regulon_human$tf))
+
+  # Get cell types
+  pattern = paste0('.', case, '.vs.', control, '.txt')
+  case.files = list.files(diff.indir, pattern = pattern)
+  cell.types = sub('integrated.diff.genes.', '', case.files)
+  cell.types = sub(pattern, '', cell.types)
+
+
+  # Run DoRothEA on case/control contrasts per cell type
+  for (cell.type in cell.types){
+    file.name = paste0(diff.indir, 'integrated.diff.genes.', 
+          gsub(' ', '_', cell.type), '.', 
+          case, '.vs.', control, '.txt')
+
+    diff.genes = read.table(file.name, header = TRUE)
+
+    # Estimate z-score values for the gene expression signature (GES)
+    myStatistics = matrix(diff.genes$avg_log2FC, dimnames = list(diff.genes$gene, 'avg_log2FC'))
+    myPvalue = matrix(diff.genes$p_val, dimnames = list(diff.genes$gene, 'p_val'))
+    mySignature = (qnorm(myPvalue/2, lower.tail = FALSE) * sign(myStatistics))[, 1]
+    mySignature = mySignature[order(mySignature, decreasing = T)]
+
+    # Estimate TF activity
+        mrs = msviper(ges = mySignature, regulon = regulon, minsize = 4, 
+              ges.filter = FALSE, verbose = FALSE)
+        TF_activities = data.frame(Regulon = names(mrs$es$nes),
+                           Size = mrs$es$size[ names(mrs$es$nes) ], 
+                           NES = mrs$es$nes, 
+                           p.value = mrs$es$p.value, 
+                           FDR = p.adjust(mrs$es$p.value, method = 'fdr'))
+        TF_activities = TF_activities[order(TF_activities$FDR),]
+    TF_activities_df[[cell.type]] = TF_activities[rownames(TF_activities_df),'NES']
+  }
+  return(TF_activities_df)
+}
 
 
 
 
+#---- Plot results from run_dorothea
+plot_dorothea = function(df, case, control){
+  suppressPackageStartupMessages(library(pheatmap))
 
+  # Order heatmap by TF activity
+  df$tf = NULL
+  df.plot = df[complete.cases(df),]
+  tf_cluster = hclust(dist(t(df.plot)))
+  tfs_ordered = tf_cluster$labels[tf_cluster$order]
+  celltype_cluster = hclust(dist(df.plot))
+  celltype_ordered = celltype_cluster$labels[celltype_cluster$order]
+
+  paletteLength = 100
+  myColor = colorRampPalette(c('Darkblue', 'white', 'red'))(paletteLength)
+  viperBreaks = c(seq(min(df.plot), 0, 
+                      length.out = ceiling(paletteLength/2) + 1),
+                  seq(max(df.plot)/paletteLength, 
+                      max(df.plot), 
+                      length.out = floor(paletteLength/2)))
+
+  p = pheatmap(t(df.plot)[tfs_ordered,celltype_ordered],
+        fontsize_col = 4, 
+        fontsize_row = 8,
+        color = myColor, 
+        breaks = viperBreaks, 
+        main = paste0(case, ' vs ', control),
+        angle_col = 90,
+        border_color = NA)
+
+  return(p)
+}
 
 
 
