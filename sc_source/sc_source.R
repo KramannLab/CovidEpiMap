@@ -321,7 +321,7 @@ plot_dorothea = function(df, case, control){
 
 
 
-#---- Side-by-side heatmaps of trade<seq results from two conditions
+#---- Side-by-side heatmaps of tradeSeq results from two conditions
 plot_heatmaps = function(smooth.res, cond1.start, cond1.end, cond2.start, cond2.end, main1, main2){
   suppressPackageStartupMessages(library(pheatmap))
   suppressPackageStartupMessages(library(gridExtra))
