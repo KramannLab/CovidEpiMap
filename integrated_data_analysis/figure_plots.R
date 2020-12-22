@@ -133,3 +133,36 @@ dev.off()
 
 
 
+
+#---- Plot expression of immune genes
+
+
+genes = c('IL2', 'IL6', 'IL10', 'IL12A', 
+          'IL12B', 'IL15', 'TNF')
+
+pdf(file = paste0(indir, 'integrated_Tcells_immune_markers.pdf'))
+DotPlot(sc, features = rev(genes), assay = 'RNA', group.by = 'condition') + 
+coord_flip() + 
+theme(axis.text.x = element_text(angle = 45, hjust = 1),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank())
+
+DotPlot(sc, features = rev(genes), assay = 'RNA', group.by = 'integrated_annotations') + 
+coord_flip() + 
+theme(axis.text.x = element_text(angle = 45, hjust = 1),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank())
+dev.off()
+
+pdf(file = paste0(indir, 'integrated_Tcells_immune_markers_violin.pdf'), width = 15)
+for (gene in genes){
+  print(VlnPlot(sc, feature = gene, 
+                split.by = 'condition', 
+                group.by = 'integrated_annotations'))
+}
+dev.off()
+
+
+
+
+
