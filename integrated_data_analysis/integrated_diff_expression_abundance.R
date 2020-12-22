@@ -71,6 +71,54 @@ for (cell.type in cell.types){
 
 
 
+#---- Plot relevant diff genes
+
+indir = '~/sciebo/CovidEpiMap/integrated/diff_genes/analysis_diff_genes/'
+genes = read.table(file = paste0(indir, 'relevant_genes_plot_DEG.txt'), header = TRUE)
+genes = genes$gene.name
+
+pdf(file = paste0(indir, 'relevant_genes_DGE.pdf'), height = 10)
+DotPlot(sc, features = rev(genes), group.by = 'condition', dot.scale = 8) + 
+coord_flip() + 
+scale_colour_gradient2(low = 'blue', mid = 'lightgrey', high = 'red', 
+    midpoint = 0, limits = c(-2,2), oob = scales::squish) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+dev.off() 
+
+
+genes = read.table(file = paste0(indir, 'relevant_genes_interactions_plot_DEG.txt'), header = TRUE)
+genes = genes$gene
+
+
+pdf(file = paste0(indir, 'relevant_genes_interactions_DGE.pdf'), height = 12)
+for (cell.type in names(cell.type.colors)){
+	subset = subset(sc, integrated_annotations == cell.type)
+
+	print(DotPlot(subset, features = rev(genes), group.by = 'condition', dot.scale = 8) + 
+	coord_flip() + 
+	scale_colour_gradient2(low = 'blue', mid = 'lightgrey', high = 'red', 
+					midpoint = 0, limits = c(-2,2), oob = scales::squish) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    ggtitle(cell.type))
+}
+dev.off()
+
+
+pdf(file = paste0(indir, 'relevant_genes_interactions_DGE_per_patient.pdf'), height = 12, width = 12)
+for (cell.type in names(cell.type.colors)){
+	subset = subset(sc, integrated_annotations == cell.type)
+
+	print(DotPlot(subset, features = rev(genes), group.by = 'patient', dot.scale = 8) + 
+	coord_flip() + 
+	scale_colour_gradient2(low = 'blue', mid = 'lightgrey', high = 'red', 
+					midpoint = 0, limits = c(-2,2), oob = scales::squish) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    ggtitle(cell.type))
+}
+dev.off()
+
+
+
 #---- Cell-type abundance testing
 # https://www.nxn.se/valent/2020/11/28/s9jjv32ogiplagwx8xrkjk532p7k28
 outdir = '~/sciebo/CovidEpiMap/cell_type_abundance/'
@@ -95,6 +143,12 @@ condition = rep(c('healthy', 'active_mild',
 				'recovered_severe'), 
 				each = 3*13)
 data = cbind(data, condition)
+
+
+# Save counts
+write.table(data, file = paste0(outdir, 'integrated.cell.type.counts.txt'),
+			sep = '\t', row.names = FALSE, quote = FALSE)
+
 
 
 # Healthy vs active mild

@@ -320,3 +320,83 @@ plot_dorothea = function(df, case, control){
 
 
 
+
+#---- Side-by-side heatmaps of trade<seq results from two conditions
+plot_heatmaps = function(smooth.res, cond1.start, cond1.end, cond2.start, cond2.end, main1, main2){
+  suppressPackageStartupMessages(library(pheatmap))
+  suppressPackageStartupMessages(library(gridExtra))
+
+  smooth.scaled = t(scale(t(smooth.res)))
+  
+  heat.smooth = pheatmap(smooth.scaled[, cond1.start:cond1.end],
+          cluster_cols = FALSE,
+          show_rownames = FALSE, 
+          show_colnames = FALSE, 
+          main = main1, 
+          legend = FALSE,
+          silent = TRUE,
+          fontsize = 6)
+
+  matching.heat = pheatmap(smooth.scaled[heat.smooth$tree_row$order, cond2.start:cond2.end],
+            cluster_cols = FALSE, 
+            cluster_rows = FALSE,
+            show_rownames = TRUE, 
+            show_colnames = FALSE, 
+            main = main2,
+            legend = FALSE, 
+            silent = TRUE,
+            fontsize_row = 2.5,
+            fontsize = 6)
+
+  p = grid.arrange(heat.smooth[[4]], matching.heat[[4]], ncol = 2)
+  return(p)
+}
+
+
+
+
+#---- Plot GO terms from GSEA
+plot_go = function(gsea.res, gsea.res.order, plot.title = NULL, n = 20){
+  suppressPackageStartupMessages(library(ggplot2))
+
+  # Format GOs
+  plot.table = head(gsea.res[gsea.res.order,], n = n)
+  plot.table$pathway = sub('GO_', '', plot.table$pathway)
+  plot.table$pathway = gsub('_', ' ', plot.table$pathway)
+
+  p = ggplot(plot.table,
+    aes(x = NES, y = pathway)) +
+    geom_point(aes(size = NES, color = padj)) +
+    theme_bw(base_size = 8) +
+    ylab(NULL) +
+    ggtitle(plot.title) +
+    scale_colour_gradient2(low = 'red', 
+                mid = 'lightgrey', 
+                high = 'blue', 
+                midpoint = 0.05, 
+                limits = c(0,0.1), 
+                oob = scales::squish)
+
+  return(p)
+}
+
+
+
+
+#---- Plot smoothed expression of genes from tradeSeq
+plot_top_genes = function(gene.set, model, n, out.dir, file.name){
+  suppressPackageStartupMessages(library(tradeSeq))
+  suppressPackageStartupMessages(library(ggplot2))
+  suppressPackageStartupMessages(library(SingleCellExperiment))
+
+  pdf(file = paste0(out.dir, '/', file.name, '.pdf'))
+  for (gene in gene.set[1:n]){
+    print(plotSmoothers(model, assays(model)$counts,
+      gene = gene,
+      alpha = 1,
+      border = TRUE) +
+      ggtitle(gene))
+  }
+  dev.off()
+}
+

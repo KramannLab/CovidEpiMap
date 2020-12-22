@@ -1,7 +1,9 @@
 # Copyright (c) [2020] [Monica T. Hannani]
 # mhannani@ukaachen.de
 
+
 #---- Pseudotime analysis on T cell sub-populations with Slingshot and tradeSeq
+
 #devtools::install_github("statOmics/tradeSeq", ref = "fastFitting")
 #devtools::install_github("kstreet13/bioc2020trajectories")
 library(tradeSeq)
@@ -12,12 +14,12 @@ library(viridis)
 library(ggbeeswarm)
 library(ggthemes)
 library(patchwork)
-library(pheatmap)
 library(SingleCellExperiment)
+set.seed(42)
 '%ni%' = Negate('%in%')
-source('./sc_source/sc_source.R')
-indir = '~/Dropbox/CovidEpiMap/integrated/'
-outdir = '~/Dropbox/CovidEpiMap/trajectory_analysis/'
+source('sc_source/sc_source.R')
+indir = '~/sciebo/CovidEpiMap/integrated/'
+outdir = '~/sciebo/CovidEpiMap/trajectory_analysis/'
 
 
 sc = readRDS(file = paste0(indir, 'integrated.RNA.Tcells.annotated.rds'))
@@ -119,12 +121,11 @@ dev.off()
 
 
 
-#---- Differential gene expression along trajectory using tradeSeq
+#---- Fit NB-GAM on gene expression data using tradeSeq
 
-# Fit negative binomial generalized additive model (NB-GAM) on a 
-# subset of cells (n = 12,684) and 10.000 genes
-set.seed(42)
-subset = subset(sc.subset, downsample = 2000)
+# Fit negative binomial generalized additive model (NB-GAM) on active infection subset
+
+subset = subset(sc.subset, condition %in% c('active_mild', 'active_severe'))
 subset = FindVariableFeatures(subset, nfeatures = 10000, verbose = FALSE)
 var.genes = VariableFeatures(subset)
 subset = subset(subset, features = var.genes)
@@ -139,9 +140,16 @@ cell.weights = slingCurveWeights(sds)[colnames(counts),]
 
 
 # Fit smoothed average gene expression profile along pseudotime using a NB-GAM
-# with a condition-specific smoother for each lineage
+# with a condition-specific smoother for each lineage (run on cluster, took 2.5 days)
+BPPARAM = BiocParallel::bpparam()
+BPPARAM$workers = 4
+
 sce = fitGAM(counts = counts, pseudotime = pseudotime,
             cellWeights = cell.weights, nknots = 6,
-            conditions = as.factor(unname(subset$condition)))
+            conditions = as.factor(unname(subset$condition)),
+            parallel = TRUE, 
+            BPPARAM = BPPARAM)
+
+saveRDS(sce, file = 'sce.parallel.active.subset.rds')
 
 
