@@ -224,7 +224,7 @@ for (patient in patients){
 
 
 	# Add VDJC genes
-	vdj.genes = read.csv(file = paste0(sample_vdj, '/clonotype.vdj.genes.csv'))
+	vdj.genes = read.csv(file = paste0('data/',  sample_vdj, '/clonotype.vdj.genes.csv'))
 	colnames(vdj.genes) = sub('Clonotype', paste0(vdj_type, '_clonotype_id'), colnames(vdj.genes))
 	vdj = merge(vdj, vdj.genes, paste0(vdj_type, '_clonotype_id'))
 	rownames(vdj) = cells
