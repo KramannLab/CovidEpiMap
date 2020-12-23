@@ -2,8 +2,10 @@
 # mhannani@ukaachen.de
 
 
-# Cell type coloring scheme
-# Colors inspired by https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
+#---- Cell type coloring scheme
+
+# Source 
+# https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 cell.type.colors = c('CD8+ naive T cells' = '#f58231',
 					           'CD8+ central memory T cells' = '#ffe119',
                      'CD8+ CD73+ regulatory T cells' = '#fabebe',
@@ -22,6 +24,7 @@ cell.type.colors = c('CD8+ naive T cells' = '#f58231',
 
 
 #---- Genesorter
+
 run_genesorter = function(sc, assay = 'RNA', slot = 'data', write.file = FALSE, out.dir = '.', file.name.prefix = NULL){
   
   # Get specificity score (specScore) and conditional probability of expression (condGeneProb)
@@ -57,6 +60,7 @@ run_genesorter = function(sc, assay = 'RNA', slot = 'data', write.file = FALSE, 
 
 
 #---- Correlation heatmap with meta data
+
 correlation_heatmap = function(object, conditionVector, assay = 'RNA', cellTypeColors = cell.type.colors){
   suppressPackageStartupMessages(library(ComplexHeatmap))
   suppressPackageStartupMessages(library(stringr))
@@ -116,6 +120,7 @@ correlation_heatmap = function(object, conditionVector, assay = 'RNA', cellTypeC
 
 
 #---- Differential gene expression function for integrated data
+
 get_markers = function(sc, condition, control, cell.type, only.sig = TRUE, adj.pval.cutoff = 0.05, logfc.threshold = 0.25, out.dir = 'diff_genes'){
   # Take care if no cells
   markers = data.frame()
@@ -152,6 +157,7 @@ get_markers = function(sc, condition, control, cell.type, only.sig = TRUE, adj.p
 
 
 #---- Heatmap function for DE genes of integrated data
+
 top_heatmap = function(sc, markers, cell.type, disease, control, n){
   if (nrow(markers) > 0){
     top.genes = markers %>%
@@ -177,6 +183,8 @@ top_heatmap = function(sc, markers, cell.type, disease, control, n){
 
 
 #---- Cell-type abundance testing
+
+# Source
 # https://www.nxn.se/valent/2020/11/28/s9jjv32ogiplagwx8xrkjk532p7k28
 # Uses integrated annotations!
 get_abundance = function(df, condition.vector){
@@ -213,7 +221,7 @@ get_abundance = function(df, condition.vector){
     )
 
 
-    # Relate log odds ratios with the average abundace of each cell type
+  # Relate log odds ratios with the average abundace of each cell type
   emm2 = emmeans(model1, specs = ~ integrated_annotations)
   mean_probs = emm2 %>%
   summary(type = 'response') %>%
@@ -244,7 +252,10 @@ get_abundance = function(df, condition.vector){
 
 
 #---- TF activity inference with DoRothEA (regulon has to be built prior to this)
+
 run_dorothea = function(case, control, diff.indir, dorothea_regulon_human, regulon){
+  suppressPackageStartupMessages(library(viper))
+
   TF_activities_df = data.frame(tf = unique(dorothea_regulon_human$tf), 
               row.names = unique(dorothea_regulon_human$tf))
 
@@ -287,6 +298,7 @@ run_dorothea = function(case, control, diff.indir, dorothea_regulon_human, regul
 
 
 #---- Plot results from run_dorothea
+
 plot_dorothea = function(df, case, control){
   suppressPackageStartupMessages(library(pheatmap))
 
@@ -322,6 +334,7 @@ plot_dorothea = function(df, case, control){
 
 
 #---- Side-by-side heatmaps of tradeSeq results from two conditions
+
 plot_heatmaps = function(smooth.res, cond1.start, cond1.end, cond2.start, cond2.end, main1, main2){
   suppressPackageStartupMessages(library(pheatmap))
   suppressPackageStartupMessages(library(gridExtra))
@@ -356,6 +369,7 @@ plot_heatmaps = function(smooth.res, cond1.start, cond1.end, cond2.start, cond2.
 
 
 #---- Plot GO terms from GSEA
+
 plot_go = function(gsea.res, gsea.res.order, plot.title = NULL, n = 20){
   suppressPackageStartupMessages(library(ggplot2))
 
@@ -384,6 +398,7 @@ plot_go = function(gsea.res, gsea.res.order, plot.title = NULL, n = 20){
 
 
 #---- Plot smoothed expression of genes from tradeSeq
+
 plot_top_genes = function(gene.set, model, n, out.dir, file.name){
   suppressPackageStartupMessages(library(tradeSeq))
   suppressPackageStartupMessages(library(ggplot2))
@@ -398,5 +413,35 @@ plot_top_genes = function(gene.set, model, n, out.dir, file.name){
       ggtitle(gene))
   }
   dev.off()
+}
+
+
+
+
+#----Combined marker violin plot
+
+get_violin = function(object, features.use){
+    p = VlnPlot(object = object, 
+                 features = features.use, 
+                 pt.size = 0, cols = cell.type.colors,
+                 combine = FALSE)
+    
+    ps = lapply(p, function(x) x + coord_flip() + NoLegend() +
+                     theme_bw() +
+                     theme(plot.title = element_text(angle = 90), legend.position = 'none',
+                           axis.title.x = element_blank(),
+                           axis.text.x = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.title.y = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           plot.margin = unit(c(0, 0, 0, 0), 'cm'),
+                           panel.grid.major = element_blank(),
+                           panel.grid.minor = element_blank(),
+                           panel.background = element_rect(colour = 'black', size = 1)))
+    
+    p = plot_grid(plotlist = ps, nrow = 1, align = 'h')
+    
+    return(p)
 }
 

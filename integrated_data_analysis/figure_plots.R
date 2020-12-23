@@ -16,35 +16,6 @@ DefaultAssay(sc) = 'RNA'
 Idents(sc) = 'integrated_annotations'
 
 
-
-# Combined marker violin plot
-get_violin = function(object, features.use){
-    p = VlnPlot(object = object, 
-                 features = features.use, 
-                 pt.size = 0, cols = cell.type.colors,
-                 combine = FALSE)
-    
-    ps = lapply(p, function(x) x + coord_flip() + NoLegend() +
-                     theme_bw() +
-                     theme(plot.title = element_text(angle = 90), legend.position = 'none',
-                           axis.title.x = element_blank(),
-                           axis.text.x = element_blank(),
-                           axis.ticks.x = element_blank(),
-                           axis.text.y = element_blank(),
-                           axis.title.y = element_blank(),
-                           axis.ticks.y = element_blank(),
-                           plot.margin = unit(c(0, 0, 0, 0), 'cm'),
-                           panel.grid.major = element_blank(),
-                           panel.grid.minor = element_blank(),
-                           panel.background = element_rect(colour = 'black', size = 1)))
-    
-    p = plot_grid(plotlist = ps, nrow = 1, align = 'h')
-    
-    return(p)
-}
-
-
-
 # Define markers (mix of ADT and GEX library)
 markers = c(
   'CD8+ naive T cells' = c('CD3', 'CD8A', 'CD8B', 
@@ -97,23 +68,22 @@ markers = c(
   'Gamma Delta T cells' = 'TRDC')
 
 
-p = get_violin(object = sc, features.use = unique(markers))
-
 pdf(file = paste0(indir, 'cell_type_markers.pdf'), width = 14, height = 6)
-p
+get_violin(object = sc, features.use = unique(markers))
 dev.off()
 
 
 
 #---- DotPlot of top10 genes based on specificity score per cluster
 
-# Genesorter
 sg = run_genesorter(sc, assay = 'RNA', slot = 'data', write.file = TRUE,
   out.dir = indir, file.name.prefix = 'integrated.tcells.')
 specScore = sg$specScore
 
 
-# Dotplot of top 10 genes per cluster
+
+#---- Dotplot of top 10 genes per cluster
+
 genes = list()
 for (i in 1:ncol(specScore)){
   genes[[i]] = rownames(head(specScore[order(specScore[,i], decreasing = TRUE),], 10))
@@ -133,9 +103,7 @@ dev.off()
 
 
 
-
 #---- Plot expression of immune genes
-
 
 genes = c('IL2', 'IL6', 'IL10', 'IL12A', 
           'IL12B', 'IL15', 'TNF')
@@ -164,5 +132,27 @@ dev.off()
 
 
 
+#---- Dotplot of activation markers
+
+genes = c('TNFRSF9', 'CD69', 'CD44',
+            'SELL', 'HLA-DR', 'CD38',
+            'CD40LG', 'KLRG1', 'LAMP1',
+            'XCL1', 'XCL2', 'CX3CR1')
+
+
+pdf(file = paste0(indir, 'integrated_Tcells_activation_markers.pdf'))
+for (cell.type in names(cell.type.colors)){
+  subset = subset(sc, integrated_annotations == cell.type)
+
+  print(DotPlot(subset, features = rev(genes), group.by = 'condition', dot.scale = 8) + 
+  coord_flip() + 
+  scale_colour_gradient2(low = 'blue', mid = 'lightgrey', high = 'red', 
+          midpoint = 0, limits = c(-2,2), oob = scales::squish) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank()) +
+    ggtitle(cell.type))
+}
+dev.off()
 
 
