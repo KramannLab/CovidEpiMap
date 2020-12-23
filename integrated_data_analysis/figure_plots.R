@@ -15,58 +15,36 @@ sc = readRDS(file = paste0(indir, 'integrated.RNA.Tcells.annotated.rds'))
 DefaultAssay(sc) = 'RNA'
 Idents(sc) = 'integrated_annotations'
 
-
-# Define markers (mix of ADT and GEX library)
 markers = c(
-  'CD8+ naive T cells' = c('CD3', 'CD8A', 'CD8B', 
-                          'CD45RA', 'CCR7', 'CD197', 
-                          'SELL', 'ACTN1', 'CD27', 
-                          'IL7R', 'CD127', 'TCF7', 
-                          'CD28'),
-  'CD8+ central memory T cells' = c('CD3', 'CD8A', 'CD8B',
-                                    'CD45R0', 'CCR7', 'CD197', 
-                                    'SELL', 'CD27', 'IL7R',
-                                    'CD127', 'TCF7', 'CD28'),
-  'CD8+ CD73+ regulatory T cells' = c('CD3', 'CD8A', 'CD8B',
-                                      'CCR7', 'CD27', 'IL7R',
-                                      'CD127', 'TCF7', 'NT5E',
-                                      'CCR9'),
-  'CD8+ TEMRA cells' = c('CD3', 'CD8A', 'CD8B',
-                        'CD45RA', 'GZMB', 'GZMH',
-                        'GNLY', 'FCGR3A', 'FGFBP2',
-                        'CX3CR1', 'HLA-DR'),
-  'CD8+ NK-like TEMRA cells' = c('CD3', 'CD8A', 'CD8B',
-                                'CD45RA', 'CX3CR1', 'KLRC2',
-                                'KLRF1', 'KIR2DL3', 'KIR3DL2',
-                                'KIR3DL1', 'NCR1', 'CD160'),
-  'CD8+ effector memory T cells 1' = c('CD3', 'CD8A', 'CD8B',
-                                      'CD45R0', 'CD27', 'CD28',
-                                      'SELL', 'HLA-DR'),
-  'CD8+ effector memory T cells 2' = c('CD3', 'CD8A', 'CD8B',
-                                      'CD45R0', 'CD27', 'CD28',
-                                      'SELL', 'HLA-DR', 'CD38',
-                                      'CX3CR1', 'FGFBP2'),
-  'CD8+ cycling effector T cells' = c('CD3', 'CD8A', 'CD8B',
-                                      'SELL', 'CD27', 'CX3CR1',
-                                      'HLA-DR', 'MKI67', 'PCNA', 
-                                      'MCM2'),
-  'CD8+ NK-like early effector T cells' = c('CD3', 'CD8A', 'CD8B',
-                                            'SELL', 'ACTN1', 'CD27',
-                                            'IL7R', 'CD127', 'TCF7', 
-                                            'ZNF683', 'LEF1', 'KLRC2', 
-                                            'NCR3'),
-  'Atypical NKT cells' = c('CD3', 'CD8A', 'CD8B',
-                          'NKG7', 'KLRB1', 'CD161',
-                          'TRAV12-3', 'TRBV7-8', 'TRBV6-5'),
-  'CD8+ exhausted T cells' = c('CD3', 'CD8A', 'CD8B',
-                              'CD45RA', 'SELL', 'CD27',
-                              'CD28', 'HLA-DR', 'CD38',
-                              'CTLA4', 'TIGIT', 'CD279',
-                              'HAVCR2', 'PRDM1', 'IL10',
-                              'CXCR6'),
+  'CD8+ naive T cells' = c('CD3', 'CD8A', 'CD8B', 'CD45RA', 'CCR7', 
+                          'CD197', 'SELL', 'ACTN1', 'CD27', 'IL7R', 
+                          'CD127', 'TCF7', 'CD28'),
+  'CD8+ central memory T cells' = c('CD3', 'CD8A', 'CD8B', 'CD45R0', 'CCR7', 
+                                    'CD197', 'SELL', 'CD27', 'IL7R', 'CD127', 
+                                    'TCF7', 'CD28'),
+  'CD8+ CD73+ regulatory T cells' = c('CD3', 'CD8A', 'CD8B', 'CCR7', 'CD27', 
+                                      'IL7R', 'CD127', 'TCF7', 'NT5E', 'CCR9'),
+  'CD8+ TEMRA cells' = c('CD3', 'CD8A', 'CD8B', 'CD45RA', 'GZMB', 
+                        'GZMH', 'GNLY', 'FCGR3A', 'FGFBP2','CX3CR1', 'HLA-DR'),
+  'CD8+ NK-like TEMRA cells' = c('CD3', 'CD8A', 'CD8B', 'CD45RA', 'CX3CR1', 
+                                'KLRC2', 'KLRF1', 'KIR2DL3', 'KIR3DL2', 'KIR3DL1', 
+                                'NCR1', 'CD160'),
+  'CD8+ effector memory T cells 1' = c('CD3', 'CD8A', 'CD8B', 'CD45R0', 'CD27', 
+                                      'CD28', 'SELL', 'HLA-DR'),
+  'CD8+ effector memory T cells 2' = c('CD3', 'CD8A', 'CD8B', 'CD45R0', 'CD27', 
+                                      'CD28', 'SELL', 'HLA-DR', 'CD38', 'CX3CR1', 'FGFBP2'),
+  'CD8+ cycling effector T cells' = c('CD3', 'CD8A', 'CD8B', 'SELL', 'CD27', 
+                                      'CX3CR1', 'HLA-DR', 'MKI67', 'PCNA', 'MCM2'),
+  'CD8+ NK-like early effector T cells' = c('CD3', 'CD8A', 'CD8B', 'SELL', 'ACTN1', 
+                                            'CD27', 'IL7R', 'CD127', 'TCF7', 'ZNF683', 
+                                            'LEF1', 'KLRC2', 'NCR3'),
+  'Atypical NKT cells' = c('CD3', 'CD8A', 'CD8B', 'NKG7', 'KLRB1', 
+                          'CD161', 'TRAV12-3', 'TRBV7-8', 'TRBV6-5'),
+  'CD8+ exhausted T cells' = c('CD3', 'CD8A', 'CD8B', 'CD45RA', 'SELL', 
+                              'CD27', 'CD28', 'HLA-DR', 'CD38', 'CTLA4', 
+                              'TIGIT', 'CD279', 'HAVCR2', 'PRDM1', 'IL10', 'CXCR6'),
   'MAIT cells' = 'TRAV1-2',
   'Gamma Delta T cells' = 'TRDC')
-
 
 pdf(file = paste0(indir, 'cell_type_markers.pdf'), width = 14, height = 6)
 get_violin(object = sc, features.use = unique(markers))
@@ -79,10 +57,6 @@ dev.off()
 sg = run_genesorter(sc, assay = 'RNA', slot = 'data', write.file = TRUE,
   out.dir = indir, file.name.prefix = 'integrated.tcells.')
 specScore = sg$specScore
-
-
-
-#---- Dotplot of top 10 genes per cluster
 
 genes = list()
 for (i in 1:ncol(specScore)){
