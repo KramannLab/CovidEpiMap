@@ -120,7 +120,7 @@ plots$p2
 dev.off()
 
 
-# Active mild vs active severe
+# Mild vs severe
 conditions = c('mild', 'severe')
 plots = get_abundance(df = data.coll, condition.vector = conditions)
 
