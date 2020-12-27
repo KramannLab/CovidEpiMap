@@ -15,7 +15,7 @@ source('sc_source/sc_source.R')
 
 
 # GSEA function
-run_gsea = function(object, markers, category, plot.title = NULL, subcategory = NULL, out.dir = '.', file.prefix){
+run_gsea = function(object, markers, category, plot.title = NULL, subcategory = NULL, out.dir = '.', file.prefix, n = 30){
 	# Fetch geneset
 	geneSets = msigdbr(species = 'Homo sapiens', category = category, subcategory = subcategory)
 	geneSets = geneSets[geneSets$human_gene_symbol %in% rownames(object),]
@@ -33,7 +33,7 @@ run_gsea = function(object, markers, category, plot.title = NULL, subcategory = 
 	pdf(file = paste0(file.name, '.pdf'), width = 10, height = 9)
 	print(plot_go(gsea.res = gsea,
 			gsea.res.order = order, 
-			n = 30, 
+			n = n, 
 			plot.title = plot.title))
 	dev.off()
 
@@ -66,7 +66,7 @@ for (dextramer in dextramers){
 dev.off()
 
 
-# Plot unique A0101-2 binding
+# Plot unique A0101-2 binding cells
 dex.subset = subset(sc, A0201_5 == 'NO' & A1101_30 == 'NO' & A0201_6 == 'NO' & 
 					A0101_2 == 'YES' & A1101_29 == 'NO' & A1101_23 == 'NO' & 
 					A0201_4 == 'NO' & A0201_12 == 'NO')
@@ -80,12 +80,6 @@ dev.off()
 
 #---- Plot clonal expansion of non-binding cells
 
-df = sc@meta.data %>% 
-	group_by(patient_clonotype) %>% 
-	add_count(name = 'clonotype_size') %>% 
-	as.data.frame()
-
-sc$clonotype_size = df$clonotype_size
 subset = subset(sc, A0201_5 == 'NO' & A1101_30 == 'NO' & A0201_6 == 'NO' & 
 					A0101_2 == 'NO' & A1101_29 == 'NO' & A1101_23 == 'NO' & 
 					A0201_4 == 'NO' & A0201_12 == 'NO')
@@ -96,47 +90,38 @@ dev.off()
 
 
 
-#---- Plot clonal expansion in binding cells
-
-
+#---- Plot clonal expansion in A0101-2 binding cells
 
 pdf(file = paste0(outdir, 'clonal_expansion_A0101-2_binding_cells.pdf'))
 FeaturePlot(dex.subset, feature = 'clonotype_size', cols = c('yellow', 'red'), order = TRUE)
 dev.off()
 
 
-
-DimPlot(sc, cells = colnames(dex.subset), feature = 'clonotype_size', cols = c('yellow', 'red'),
-			max.cutoff = 500, order = TRUE)
+pdf(file = paste0(outdir, 'clonal_expansion_A0101-2_binding_cells_covid_split.pdf'), width = 10)
+FeaturePlot(dex.subset, feature = 'clonotype_size', cols = c('yellow', 'red'), 
+			split.by = 'COVID', order = TRUE)
 dev.off()
 
 
 
+#---- Analysis of A0101-2 binding COVID vs NON-COVID cells
 
-pdf(file = paste0(outdir, 'clonal_expansion_binding_cells_covid_split.pdf'), width = 10)
-FeaturePlot(subset, feature = 'clonotype_size', cols = c('yellow', 'red'), 
-			split.by = 'COVID', max.cutoff = 500, order = TRUE)
-dev.off()
+Idents(dex.subset) = 'COVID'
 
-
-
-#---- DGEA/GSEA of binding COVID vs NON-COVID cells
-
-Idents(subset) = 'COVID'
-
-markers = FindMarkers(subset, ident.1 = 'COVID',
+markers = FindMarkers(dex.subset, ident.1 = 'COVID',
       				ident.2 = 'NON-COVID', 
       				min.pct = 0.25,
       				logfc.threshold = 0)
 
 markers = markers[order(markers$avg_log2FC, decreasing = TRUE),]
 
+
 # Write to file
 markers.out = markers[markers$p_val_adj < 0.05,]
 markers.out$gene = rownames(markers.out)
 
 write.table(markers.out[,c(6,1:5)], 
-        file = paste0(outdir, 'COVID_vs_NON-COVID_binding_cells_dge.txt'),
+        file = paste0(outdir, 'COVID_vs_NON-COVID_A0101-2_binding_cells_dge.txt'),
         quote = FALSE, 
         sep = '\t', 
         row.names = FALSE)
@@ -144,40 +129,34 @@ write.table(markers.out[,c(6,1:5)],
 
 # GSEA
 # GO
-run_gsea(object = subset, markers = markers, category = 'C5', subcategory = 'BP',
+file.prefix = paste0('COVID_vs_NON-COVID_A0101-2_binding_cells')
+
+run_gsea(object = dex.subset, markers = markers, category = 'C5', subcategory = 'BP',
 		out.dir = outdir, plot.title = 'GO',
-		file.prefix = paste0('COVID_vs_NON-COVID_binding_cells'))
+		file.prefix = file.prefix, n = 40)
 
 # PID
-run_gsea(object = subset, markers = markers, category = 'C2', subcategory = 'PID',
+run_gsea(object = dex.subset, markers = markers, category = 'C2', subcategory = 'PID',
 		out.dir = outdir, plot.title = 'PID',
-		file.prefix = paste0('COVID_vs_NON-COVID_binding_cells'))
+		file.prefix = file.prefix)
 
 # Immunological signature
-run_gsea(object = subset, markers = markers, category = 'C7',
+run_gsea(object = dex.subset, markers = markers, category = 'C7',
 		out.dir = outdir, plot.title = 'Immunological Signature',
-		file.prefix = paste0('COVID_vs_NON-COVID_binding_cells'))
+		file.prefix = file.prefix)
 
 
 
+#---- A0101-2 binding vs non-binding cells (active severe)
 
-#---- A0101_2-binding vs non-binding cells (active severe)
-
+# Only evaluate cell types with >200 binding cells in each group and
+# representation from at least 2 patients
 dextramer = 'A0101_2'
-df = sc@meta.data
+unique_binders = colnames(dex.subset)
+df = subset@meta.data
 
-# Only evaluate cell types with >200 cells in each group
 cell.types = c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1',
 				'CD8+ effector memory T cells 2')
-
-# Active severe binding CD8+ TEMRA cells: 2216
-# Active severe non-binding CD8+ TEMRA cells: 1280
-
-# Active severe binding CD8+ effector memory T cells 1: 601
-# Active severe non-binding CD8+ effector memory T cells 1: 1008
-
-# Active severe binding CD8+ effector memory T cells 2: 417
-# Active severe non-binding CD8+ effector memory T cells 2: 247
 
 
 for (cell.type in cell.types){
