@@ -71,7 +71,7 @@ for (patient in patients){
 	sc = ScaleData(sc, verbose = FALSE, features = rownames(sc))
 	# Add another PCA name so not to overwrite RNA's PCA slot
 	sc = RunPCA(sc, verbose = FALSE, reduction.name = 'apca', reduction.key = 'APC_',
-		features = rownames(sc)[23:38])
+		features = rownames(sc)[24:38])
 	apca_dims = ncol(sc@reductions$apca@cell.embeddings)
 
 

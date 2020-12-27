@@ -3,13 +3,13 @@
 
 
 #--- Add cell type annotations to subset for relevant T cells for per patient clonotyping
+
 library(Seurat)
-indir = '~/Dropbox/CovidEpiMap/per_patient/'
+indir = '~/sciebo/CovidEpiMap/per_patient/'
 setwd(indir)
 '%ni%' = Negate('%in%')
 
 
-#--- Filter bad quality clusters and add annotations
 # Patient 1
 patient = '1'
 sample = paste0(patient, '_GEX_SURF')

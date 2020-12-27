@@ -37,7 +37,7 @@ assay = 'RNA'
 obj.list = c()
 for (patient in patients){
 	sample = paste0(patient, '_GEX_SURF')
-	indir = paste0('~/Dropbox/CovidEpiMap/per_patient/', sample, '/')
+	indir = paste0('~/sciebo/CovidEpiMap/per_patient/', sample, '/')
 	sc = readRDS(file = paste0(indir, sample, '.rds'))
 
 	# Find variable features again
@@ -135,31 +135,6 @@ sc.subset$patient = factor(sc.subset$patient,
 #---- Visualize UMAP
 pdf(file = 'integrated_RNA_Tcells.pdf', width = 10)
 DimPlot(sc.subset, cols = cell.type.colors)
-dev.off()
-
-
-
-#---- Bar charts with cell type distribution
-
-cell.table = data.frame(cell = colnames(sc.subset), condition = sc.subset$condition, 
-	cluster = Idents(sc.subset), patient = sc.subset$patient)
-
-pdf(file = paste0(outdir, 'integrated_Tcells_barchart_celltype_condition.pdf'), width = 8)
-ggplot(cell.table, aes(x = condition, fill = as.factor(cluster))) + 
-geom_bar(position = position_fill(reverse = TRUE)) + 
-labs(y = 'Proportion', x = element_blank(), fill = 'Cell type') +
-theme_classic() +
-theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-scale_fill_manual(values = cell.type.colors)
-dev.off()
-
-pdf(file = paste0(outdir, 'integrated_Tcells_barchart_celltype_patient.pdf'), width = 20)
-ggplot(cell.table, aes(x = patient, fill = as.factor(cluster))) + 
-geom_bar(position = position_fill(reverse = TRUE)) + 
-labs(y = 'Proportion', x = element_blank(), fill = 'Cell type') +
-theme_classic() +
-theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-scale_fill_manual(values = cell.type.colors)
 dev.off()
 
 

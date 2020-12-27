@@ -101,6 +101,13 @@ pdf(file = paste0(out.dir, control, '_vs_',case, '.pdf'), width = 12, height = 6
 plot_dorothea(df = df, case = case, control = control)
 dev.off()
 
+# Write to file
+df = df[complete.cases(df),]
+write.table(df, file = paste0(out.dir, control, '_vs_',case, '.txt'),
+			sep = '\t',
+			row.names = FALSE,
+			quote = FALSE)
+
 
 # Healthy vs active severe
 case = 'active_severe'
@@ -112,6 +119,13 @@ df = run_dorothea(case = case, control = control, diff.indir = diff.indir,
 pdf(file = paste0(out.dir, control, '_vs_',case, '.pdf'), width = 12, height = 6)
 plot_dorothea(df = df, case = case, control = control)
 dev.off()
+
+# Write to file
+df = df[complete.cases(df),]
+write.table(df, file = paste0(out.dir, control, '_vs_',case, '.txt'),
+			sep = '\t',
+			row.names = FALSE,
+			quote = FALSE)
 
 
 # Mild vs severe active
@@ -125,6 +139,13 @@ pdf(file = paste0(out.dir, control, '_vs_',case, '.pdf'), width = 12, height = 6
 plot_dorothea(df = df, case = case, control = control)
 dev.off()
 
+# Write to file
+df = df[complete.cases(df),]
+write.table(df, file = paste0(out.dir, control, '_vs_',case, '.txt'),
+			sep = '\t',
+			row.names = FALSE,
+			quote = FALSE)
+
 
 # Mild vs severe recovered
 case = 'recovered_severe'
@@ -137,7 +158,14 @@ pdf(file = paste0(out.dir, control, '_vs_',case, '.pdf'), width = 12, height = 6
 plot_dorothea(df = df, case = case, control = control)
 dev.off()
 
+# Write to file
+df = df[complete.cases(df),]
+write.table(df, file = paste0(out.dir, control, '_vs_',case, '.txt'),
+			sep = '\t',
+			row.names = FALSE,
+			quote = FALSE)
      
+
 
 #---- Run PROGENy  cell clusters
 

@@ -52,6 +52,80 @@ dev.off()
 
 
 
+#---- Bar charts with cell type distribution
+
+cell.table = data.frame(cell = colnames(sc), condition = sc$condition,
+                        cluster = sc$integrated_annotations, 
+                        patient = sc$patient)
+
+
+pdf(file = paste0(outdir, 'integrated_Tcells_barchart_celltype_condition.pdf'), width = 8)
+ggplot(cell.table, aes(x = condition, fill = as.factor(cluster))) + 
+geom_bar(position = position_fill(reverse = TRUE)) + 
+labs(y = 'Proportion', x = element_blank(), fill = 'Cell type') +
+theme_classic() +
+theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+scale_fill_manual(values = cell.type.colors)
+dev.off()
+
+pdf(file = paste0(outdir, 'integrated_Tcells_barchart_celltype_patient.pdf'), width = 20)
+ggplot(cell.table, aes(x = patient, fill = as.factor(cluster))) + 
+geom_bar(position = position_fill(reverse = TRUE)) + 
+labs(y = 'Proportion', x = element_blank(), fill = 'Cell type') +
+theme_classic() +
+theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+scale_fill_manual(values = cell.type.colors)
+dev.off()
+
+
+
+#---- Bar charts with average cell type distribution
+
+df = cell.table %>%
+group_by(patient) %>%
+count(cluster, name = 'count', .drop = FALSE) %>%
+add_count(wt = count, name = 'total') %>%
+mutate(fraction = count/total) %>%
+as.data.frame
+
+condition = rep(c('healthy', 'active_mild',
+        'active_severe', 'recovered_mild',
+        'recovered_severe'), 
+        each = 3*13)
+df = cbind(df, condition)
+
+df = df %>% 
+group_by(condition, cluster) %>%
+summarize(mean = mean(fraction)) %>%
+as.data.frame
+
+df$condition = factor(df$condition, levels = c('healthy', 'active_mild',
+        'active_severe', 'recovered_mild',
+        'recovered_severe'))
+df$condition_collapsed = sub('active_', '', df$condition)
+df$condition_collapsed = sub('recovered_', '', df$condition_collapsed)
+
+
+pdf(file = paste0(indir, 'integrated_Tcells_barchart_celltype_condition_average.pdf'), width = 8)
+ggplot(df, aes(fill=cluster, y=mean, x=condition)) + 
+    geom_bar(stat="identity", position = position_fill(reverse = TRUE)) + 
+labs(y = 'Average proportion', x = element_blank(), fill = 'Cell type') +
+theme_classic() +
+theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+scale_fill_manual(values = cell.type.colors)
+dev.off()
+
+pdf(file = paste0(indir, 'integrated_Tcells_barchart_celltype_condition_collapsed_average.pdf'))
+ggplot(df, aes(fill=cluster, y=mean, x=condition_collapsed)) + 
+    geom_bar(stat="identity", position = position_fill(reverse = TRUE)) + 
+labs(y = 'Average proportion', x = element_blank(), fill = 'Cell type') +
+theme_classic() +
+theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+scale_fill_manual(values = cell.type.colors)
+dev.off()
+
+
+
 #---- DotPlot of top10 genes based on specificity score per cluster
 
 sg = run_genesorter(sc, assay = 'RNA', slot = 'data', write.file = TRUE,
@@ -80,9 +154,9 @@ dev.off()
 #---- Plot expression of immune genes
 
 genes = c('IL2', 'IL6', 'IL10', 'IL12A', 
-          'IL12B', 'IL15', 'TNF')
+          'IL12B', 'IL13', 'IL15', 'TNF')
 
-pdf(file = paste0(indir, 'integrated_Tcells_immune_markers.pdf'))
+pdf(file = paste0(indir, 'integrated_Tcells_immune_markers.pdf'), width = 8)
 DotPlot(sc, features = rev(genes), assay = 'RNA', group.by = 'condition') + 
 coord_flip() + 
 theme(axis.text.x = element_text(angle = 45, hjust = 1),
