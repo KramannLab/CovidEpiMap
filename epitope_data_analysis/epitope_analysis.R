@@ -71,6 +71,8 @@ dex.subset = subset(sc, A0201_5 == 'NO' & A1101_30 == 'NO' & A0201_6 == 'NO' &
 					A0101_2 == 'YES' & A1101_29 == 'NO' & A1101_23 == 'NO' & 
 					A0201_4 == 'NO' & A0201_12 == 'NO')
 
+saveRDS(dex.subset, file = paste0(indir, 'A0101-2.unique.binders.rds'))
+
 pdf(file = paste0(outdir, 'integrated_Tcells_dextramer_A0101-2_unique_binding.pdf'))
 DimPlot(sc, cells.highlight = colnames(dex.subset),
 		cols.highlight = viridis(1), sizes.highlight = 0.1)
@@ -151,22 +153,20 @@ run_gsea(object = dex.subset, markers = markers, category = 'C7',
 
 # Only evaluate cell types with >200 binding cells in each group and
 # representation from at least 2 patients
-dextramer = 'A0101_2'
-unique_binders = colnames(dex.subset)
-df = subset@meta.data
-
 cell.types = c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1',
 				'CD8+ effector memory T cells 2')
 
 
 for (cell.type in cell.types){
-	# DGEA
-	subset = subset(sc, condition == 'active_severe' & integrated_annotations == cell.type)
-	Idents(subset) = dextramer
+	binding = colnames(subset(dex.subset, condition == 'active_severe' & integrated_annotations == cell.type))
+	non.binding = colnames(subset(sc, condition == 'active_severe' & integrated_annotations == cell.type & A0101_2 == 'NO'))
+	subset = subset(sc, cells = c(binding, non.binding))
+	Idents(subset) = 'A0101_2'
 
+
+	# DGEA
 	markers = FindMarkers(subset, ident.1 = 'YES', ident.2 = 'NO', logfc.threshold = 0)
 	markers = markers[order(markers$avg_log2FC, decreasing = TRUE),]
-
 
 	# Write to file
 	markers.out = markers[markers$p_val_adj < 0.05,]
@@ -174,7 +174,7 @@ for (cell.type in cell.types){
 	cell.type.name = gsub(' ', '_', cell.type)
 
 	write.table(markers.out[,c(6, 1:5)], 
-			file = paste0(outdir, dextramer, '/active_severe_', cell.type.name, '_binding_vs_nonbinding_dge.txt'), 
+			file = paste0(outdir, 'active_severe_', cell.type.name, '_binding_vs_nonbinding_dge.txt'), 
 			sep = '\t',
 			row.names = FALSE, 
 			quote = FALSE)
@@ -182,72 +182,112 @@ for (cell.type in cell.types){
 
 	# GSEA
 	# GO
+	file.prefix = paste0('active_severe_', cell.type.name, '_binding_vs_nonbinding')
 	run_gsea(object = sc, markers = markers, category = 'C5', subcategory = 'BP',
-			out.dir = paste0(outdir, dextramer), cell.type = cell.type, 
-			file.prefix = paste0('active_severe_', cell.type.name, '_binding_vs_nonbinding'))
+			out.dir = outdir, plot.title = cell.type, 
+			file.prefix = file.prefix)
 
 	# PID
 	run_gsea(object = sc, markers = markers, category = 'C2', subcategory = 'PID',
-			out.dir = paste0(outdir, dextramer), cell.type = cell.type, 
-			file.prefix = paste0('active_severe_', cell.type.name, '_binding_vs_nonbinding'))
+			out.dir = outdir, plot.title = cell.type, 
+			file.prefix = file.prefix)
 
 	# Immunological signature
 	run_gsea(object = sc, markers = markers, category = 'C7',
-			out.dir = paste0(outdir, dextramer), cell.type = cell.type,
-			file.prefix = paste0('active_severe_', cell.type.name, '_binding_vs_nonbinding'))	
+			out.dir = outdir, plot.title = cell.type,
+			file.prefix = file.prefix)	
 }
 
 
 
-#---- A0101_2-binding recovered severe vs recovered mild CD8+ TEMRA cells 
+#---- A0101-2 binding recovered severe vs recovered mild
 
-# Recovered mild binding CD8+ TEMRA cells: 599
-# Recovered severe binding CD8+ TEMRA cells: 250
-
-
-# DGEA
-cell.type = 'CD8+ TEMRA cells'
-subset = subset(sc, condition %in% c('recovered_mild', 'recovered_severe') & integrated_annotations == cell.type & !!sym(dextramer) == 'YES')
-Idents(subset) = 'condition'
-
-markers = FindMarkers(subset, ident.1 = 'recovered_severe', ident.2 = 'recovered_mild', logfc.threshold = 0)
-markers = markers[order(markers$avg_log2FC, decreasing = TRUE),]
+cell.types = c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1')
 
 
-# Write to file
-markers.out = markers[markers$p_val_adj < 0.05,]
-markers.out$gene = rownames(markers.out)
-cell.type.name = gsub(' ', '_', cell.type)
-file.name = paste0(cell.type.name, '_binding_recovered_severe_vs_recovered_mild')
+for (cell.type in cell.types){
+	subset = subset(dex.subset, integrated_annotations == cell.type)
+	Idents(subset) = 'condition'
 
-write.table(markers.out[,c(6, 1:5)], 
-			file = paste0(outdir, dextramer, '/', file.name, '_dge.txt'), 
+	# DGEA
+	markers = FindMarkers(subset, ident.1 = 'recovered_severe', 
+						ident.2 = 'recovered_mild', logfc.threshold = 0)
+	markers = markers[order(markers$avg_log2FC, decreasing = TRUE),]
+
+	# Write to file
+	markers.out = markers[markers$p_val_adj < 0.05,]
+	markers.out$gene = rownames(markers.out)
+	cell.type.name = gsub(' ', '_', cell.type)
+	file.name = paste0(cell.type.name, '_A0101-2_binding_recovered_severe_vs_recovered_mild')
+
+	write.table(markers.out[,c(6, 1:5)], 
+			file = paste0(outdir, file.name, '_dge.txt'), 
 			sep = '\t',
 			row.names = FALSE, 
 			quote = FALSE)
 
 
-# GSEA
-# GO
-run_gsea(object = sc, markers = markers, category = 'C5', subcategory = 'BP',
-		out.dir = paste0(outdir, dextramer), cell.type = cell.type, 
-		file.prefix = file.name)
+	# GSEA
+	# GO
+	run_gsea(object = subset, markers = markers, category = 'C5', subcategory = 'BP',
+			out.dir = outdir, plot.title = cell.type, 
+			file.prefix = file.name)
 
-# PID
-run_gsea(object = sc, markers = markers, category = 'C2', subcategory = 'PID',
-		out.dir = paste0(outdir, dextramer), cell.type = cell.type, 
-		file.prefix = file.name)
+	# PID
+	run_gsea(object = subset, markers = markers, category = 'C2', subcategory = 'PID',
+			out.dir = outdir, plot.title = cell.type, 
+			file.prefix = file.name)
 
-# Immunological signature
-run_gsea(object = sc, markers = markers, category = 'C7',
-		out.dir = paste0(outdir, dextramer), cell.type = cell.type,
-		file.prefix = file.name)	
-
-
-
+	# Immunological signature
+	run_gsea(object = subset, markers = markers, category = 'C7',
+			out.dir = outdir, plot.title = cell.type,
+			file.prefix = file.name)	
+}
 
 
 
+#---- A0101-2 binding severe vs mild
 
+cell.types = c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1')
+
+
+for (cell.type in cell.types){
+	subset = subset(dex.subset, integrated_annotations == cell.type)
+	Idents(subset) = 'condition_collapsed'
+
+	# DGEA
+	markers = FindMarkers(subset, ident.1 = 'severe', 
+						ident.2 = 'mild', logfc.threshold = 0)
+	markers = markers[order(markers$avg_log2FC, decreasing = TRUE),]
+
+	# Write to file
+	markers.out = markers[markers$p_val_adj < 0.05,]
+	markers.out$gene = rownames(markers.out)
+	cell.type.name = gsub(' ', '_', cell.type)
+	file.name = paste0(cell.type.name, '_A0101-2_binding_severe_vs__mild')
+
+	write.table(markers.out[,c(6, 1:5)], 
+			file = paste0(outdir, file.name, '_dge.txt'), 
+			sep = '\t',
+			row.names = FALSE, 
+			quote = FALSE)
+
+
+	# GSEA
+	# GO
+	run_gsea(object = subset, markers = markers, category = 'C5', subcategory = 'BP',
+			out.dir = outdir, plot.title = cell.type, 
+			file.prefix = file.name)
+
+	# PID
+	run_gsea(object = subset, markers = markers, category = 'C2', subcategory = 'PID',
+			out.dir = outdir, plot.title = cell.type, 
+			file.prefix = file.name)
+
+	# Immunological signature
+	run_gsea(object = subset, markers = markers, category = 'C7',
+			out.dir = outdir, plot.title = cell.type,
+			file.prefix = file.name)	
+}
 
 

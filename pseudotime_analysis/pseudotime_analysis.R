@@ -83,7 +83,7 @@ dev.off()
 
 
 
-# Plot cells ordered on pseudotime
+#---- Plot cells ordered on pseudotime
 cell.table = data.frame(cell = colnames(sc.subset), pseudotime = sc.subset$slingshot_pseudotime,
 						cell.type = sc.subset$integrated_annotations)
 
@@ -99,8 +99,70 @@ dev.off()
 
 
 
-# Check if there is imbalance in local distribution of cells according to condition
-# compared to overall distribution (if so, this might affect downstream analysis)
+#---- Plot condition density along pseudotime
+
+sc.subset$slingshot_pseudotime_curve1 = pseudotime[,1]
+sc.subset$slingshot_pseudotime_curve2 = pseudotime[,2]
+df = sc.subset@meta.data
+
+
+pdf(file = paste0(outdir, 'integrated_Tcells_condition_lineage_density.pdf'))
+# Lineage 1
+ggplot() + 
+geom_density(data = df[df$condition %ni% 'healthy',], 
+            aes(slingshot_pseudotime_curve1, group = condition, 
+                fill = condition), 
+            alpha = 0.5, 
+            adjust = 2) +
+scale_fill_manual(values = viridis(4), name = 'Condition') +
+theme_classic() +
+xlab('Pseudotime (Lineage 1)') +
+ylab('Density')
+
+# Lineage 2
+ggplot() + 
+geom_density(data = df[df$condition %ni% 'healthy',], 
+            aes(slingshot_pseudotime_curve2, group = condition, 
+                fill = condition), 
+            alpha = 0.5, 
+            adjust = 2) +
+scale_fill_manual(values = viridis(4), name = 'Condition') +
+theme_classic() +
+xlab('Pseudotime (Lineage 2)') +
+ylab('Density')
+dev.off()
+
+
+
+pdf(file = paste0(outdir, 'integrated_Tcells_condition_collapsed_lineage_density.pdf'))
+# Lineage 1
+ggplot() + 
+geom_density(data = df[df$condition %ni% 'healthy',], 
+            aes(slingshot_pseudotime_curve1, group = condition_collapsed, 
+                fill = condition_collapsed), 
+            alpha = 0.5, 
+            adjust = 2) +
+scale_fill_manual(values = viridis(2), name = 'Condition') +
+theme_classic() +
+xlab('Pseudotime (Lineage 1)') +
+ylab('Density')
+
+# Lineage 2
+ggplot() + 
+geom_density(data = df[df$condition %ni% 'healthy',], 
+            aes(slingshot_pseudotime_curve2, group = condition_collapsed, 
+                fill = condition_collapsed), 
+            alpha = 0.5, 
+            adjust = 2) +
+scale_fill_manual(values = viridis(2), name = 'Condition') +
+theme_classic() +
+xlab('Pseudotime (Lineage 2)') +
+ylab('Density')
+dev.off()
+
+
+
+#--- Check for imbalance in local distribution of cells according to condition
 
 scores = bioc2020trajectories::imbalance_score(
   rd = reducedDims(sds),
