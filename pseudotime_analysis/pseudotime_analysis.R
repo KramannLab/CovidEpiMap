@@ -85,22 +85,6 @@ dev.off()
 
 
 
-#---- Plot cells ordered on pseudotime
-cell.table = data.frame(cell = colnames(sc.subset), pseudotime = sc.subset$slingshot_pseudotime,
-						cell.type = sc.subset$integrated_annotations)
-
-
-pdf(file = paste0(outdir, 'integrated_Tcells_slingshot_pseudotime_violin.pdf'))
-ggplot(cell.table, aes(x = pseudotime, y = cell.type, colour = cell.type)) +
-    geom_quasirandom(groupOnX = FALSE) +
-    theme_classic() +
-    scale_color_manual(values = cell.type.colors, name = 'Cell type') +
-    xlab('Slingshot pseudotime (arclength)') +
-    ylab('')
-dev.off()
-
-
-
 #---- Plot condition density along pseudotime
 
 sc.subset$slingshot_pseudotime_curve1 = pseudotime[,1]
