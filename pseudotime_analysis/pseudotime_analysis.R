@@ -162,6 +162,37 @@ dev.off()
 
 
 
+#---- Plot cells ordered in pseudotime (1D)
+
+df = df[df$condition %ni% 'healthy',]
+df$integrated_annotations = factor(df$integrated_annotations, levels = names(cell.type.colors))
+
+pdf(file = paste0(outdir, 'integrated_Tcells_ordered_pseudotime_1dimension_lineage1.pdf'), 
+    width = 10, height = 2)
+ggplot() +
+geom_point(aes(x=seq_along(df$slingshot_pseudotime_curve1), 
+          y=df$slingshot_pseudotime_curve1, 
+          colour = df$integrated_annotations)) +
+scale_colour_manual(values = cell.type.colors) +
+coord_flip() +
+theme_void() +
+NoLegend()
+dev.off()
+
+pdf(file = paste0(outdir, 'integrated_Tcells_ordered_pseudotime_1dimension_lineage2.pdf'), 
+    width = 10, height = 2)
+ggplot() +
+geom_point(aes(x=seq_along(df$slingshot_pseudotime_curve2), 
+          y=df$slingshot_pseudotime_curve2, 
+          colour = df$integrated_annotations)) +
+scale_colour_manual(values = cell.type.colors) +
+coord_flip() +
+theme_void() +
+NoLegend()
+dev.off()
+
+
+
 #--- Check for imbalance in local distribution of cells according to condition
 
 scores = bioc2020trajectories::imbalance_score(
