@@ -15,6 +15,8 @@ library(ggbeeswarm)
 library(ggthemes)
 library(patchwork)
 library(SingleCellExperiment)
+library(cowplot)
+library(gridExtra)
 set.seed(42)
 '%ni%' = Negate('%in%')
 source('sc_source/sc_source.R')
@@ -104,40 +106,14 @@ dev.off()
 sc.subset$slingshot_pseudotime_curve1 = pseudotime[,1]
 sc.subset$slingshot_pseudotime_curve2 = pseudotime[,2]
 df = sc.subset@meta.data
+df = df[df$condition %ni% 'healthy',]
+df$integrated_annotations = factor(df$integrated_annotations, 
+                                    levels = names(cell.type.colors))
 
-
-pdf(file = paste0(outdir, 'integrated_Tcells_condition_lineage_density.pdf'))
 # Lineage 1
-ggplot() + 
-geom_density(data = df[df$condition %ni% 'healthy',], 
-            aes(slingshot_pseudotime_curve1, group = condition, 
-                fill = condition), 
-            alpha = 0.5, 
-            adjust = 2) +
-scale_fill_manual(values = viridis(4), name = 'Condition') +
-theme_classic() +
-xlab('Pseudotime (Lineage 1)') +
-ylab('Density')
-
-# Lineage 2
-ggplot() + 
-geom_density(data = df[df$condition %ni% 'healthy',], 
-            aes(slingshot_pseudotime_curve2, group = condition, 
-                fill = condition), 
-            alpha = 0.5, 
-            adjust = 2) +
-scale_fill_manual(values = viridis(4), name = 'Condition') +
-theme_classic() +
-xlab('Pseudotime (Lineage 2)') +
-ylab('Density')
-dev.off()
-
-
-
-pdf(file = paste0(outdir, 'integrated_Tcells_condition_collapsed_lineage_density.pdf'))
-# Lineage 1
-ggplot() + 
-geom_density(data = df[df$condition %ni% 'healthy',], 
+# Density
+p1 = ggplot() + 
+geom_density(data = df, 
             aes(slingshot_pseudotime_curve1, group = condition_collapsed, 
                 fill = condition_collapsed), 
             alpha = 0.5, 
@@ -147,9 +123,32 @@ theme_classic() +
 xlab('Pseudotime (Lineage 1)') +
 ylab('Density')
 
+# Cell ordering
+p2 = ggplot() +
+geom_point(aes(x=seq_along(df$slingshot_pseudotime_curve1), 
+          y=df$slingshot_pseudotime_curve1, 
+          colour = df$integrated_annotations),
+    size = 0.5) +
+scale_colour_manual(values = cell.type.colors) +
+coord_flip() +
+theme_void() +
+NoLegend()
+
+
+empty_plot = plot(0,type='n',axes=FALSE,ann=FALSE)
+l = get_legend(p1)
+top_row = plot_grid(empty_plot, p2, empty_plot, align = 'h', axis = 'l', ncol = 3, rel_widths = c(1,7.4,2.3))
+bottom_row = plot_grid(p1 + NoLegend(), l, align = 'h', axis = 'l', ncol = 2, rel_widths = c(4,1))
+
+pdf(file = paste0(outdir, 'integrated_Tcells_condition_lineage1_density.pdf'))
+plot_grid(top_row, bottom_row, ncol = 1, rel_heights = c(1/16, 15/16))
+dev.off()
+
+
 # Lineage 2
-ggplot() + 
-geom_density(data = df[df$condition %ni% 'healthy',], 
+# Density
+p1 = ggplot() + 
+geom_density(data = df, 
             aes(slingshot_pseudotime_curve2, group = condition_collapsed, 
                 fill = condition_collapsed), 
             alpha = 0.5, 
@@ -158,37 +157,25 @@ scale_fill_manual(values = viridis(2), name = 'Condition') +
 theme_classic() +
 xlab('Pseudotime (Lineage 2)') +
 ylab('Density')
-dev.off()
 
-
-
-#---- Plot cells ordered in pseudotime (1D)
-
-df = df[df$condition %ni% 'healthy',]
-df$integrated_annotations = factor(df$integrated_annotations, levels = names(cell.type.colors))
-
-pdf(file = paste0(outdir, 'integrated_Tcells_ordered_pseudotime_1dimension_lineage1.pdf'), 
-    width = 10, height = 2)
-ggplot() +
-geom_point(aes(x=seq_along(df$slingshot_pseudotime_curve1), 
-          y=df$slingshot_pseudotime_curve1, 
-          colour = df$integrated_annotations)) +
-scale_colour_manual(values = cell.type.colors) +
-coord_flip() +
-theme_void() +
-NoLegend()
-dev.off()
-
-pdf(file = paste0(outdir, 'integrated_Tcells_ordered_pseudotime_1dimension_lineage2.pdf'), 
-    width = 10, height = 2)
-ggplot() +
+# Cell ordering
+p2 = ggplot() +
 geom_point(aes(x=seq_along(df$slingshot_pseudotime_curve2), 
           y=df$slingshot_pseudotime_curve2, 
-          colour = df$integrated_annotations)) +
+          colour = df$integrated_annotations),
+    size = 0.5) +
 scale_colour_manual(values = cell.type.colors) +
 coord_flip() +
 theme_void() +
 NoLegend()
+
+
+l = get_legend(p1)
+top_row = plot_grid(empty_plot, p2, empty_plot, align = 'h', axis = 'l', ncol = 3, rel_widths = c(1,7.4,2.3))
+bottom_row = plot_grid(p1 + NoLegend(), l, align = 'h', axis = 'l', ncol = 2, rel_widths = c(4,1))
+
+pdf(file = paste0(outdir, 'integrated_Tcells_condition_lineage2_density.pdf'))
+plot_grid(top_row, bottom_row, ncol = 1, rel_heights = c(1/16, 15/16))
 dev.off()
 
 
