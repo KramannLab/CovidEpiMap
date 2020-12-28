@@ -236,6 +236,5 @@ for (i in 1:length(dextramers_select)){
 				sep = '\t',
 				row.names = FALSE,
 				quote = FALSE)
-
 }
 
