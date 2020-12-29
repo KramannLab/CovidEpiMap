@@ -3,6 +3,7 @@
 
 
 #---- Geneset enrichment analysis of DE genes (active severe vs active mild)
+
 library(Seurat)
 indir = '~/sciebo/CovidEpiMap/diff_expression/diff_genes_for_dorothea/'
 out.dir = '~/sciebo/CovidEpiMap/geneset_enrichment/'
