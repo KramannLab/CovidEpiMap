@@ -397,6 +397,42 @@ plot_go = function(gsea.res, gsea.res.order, plot.title = NULL, n = 20){
 
 
 
+#---- GSEA function
+run_gsea = function(bg.genes, stats, category, plot.title = NULL, subcategory = NULL, out.dir = '.', file.prefix, n = 30){
+  suppressPackageStartupMessages(library(msigdbr))
+  suppressPackageStartupMessages(library(fgsea))
+  suppressPackageStartupMessages(library(dplyr))
+
+  # Fetch geneset
+  geneSets = msigdbr(species = 'Homo sapiens', category = category, subcategory = subcategory)
+  geneSets = geneSets[geneSets$human_gene_symbol %in% bg.genes,]
+  m_list = geneSets %>% split(x = .$human_gene_symbol, f = .$gs_name)
+
+  # Run GSEA
+  gsea = fgsea(pathways = m_list, stats = stats, minSize = 10, eps = 0.0)
+  order = order(gsea$padj, decreasing = FALSE)
+
+  # Plot
+  file.name = paste0(out.dir, '/', file.prefix, '_gsea_', paste0(c(category, subcategory), collapse = '_'))
+
+  pdf(file = paste0(file.name, '.pdf'), width = 10, height = 9)
+  print(plot_go(gsea.res = gsea,
+      gsea.res.order = order, 
+      n = n, 
+      plot.title = plot.title))
+  dev.off()
+
+  # Write to file
+  write.table(gsea[order, -8], 
+      file = paste0(file.name, '.txt'), 
+      sep = '\t', 
+      row.names = FALSE, 
+      quote = FALSE)
+}
+
+
+
+
 #---- Plot smoothed expression of genes from tradeSeq
 
 plot_top_genes = function(gene.set, model, n, out.dir, file.name){

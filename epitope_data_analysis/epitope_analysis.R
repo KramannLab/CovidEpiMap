@@ -115,6 +115,7 @@ df = df[df$condition %ni% 'healthy',]
 df$integrated_annotations = factor(df$integrated_annotations, 
                                     levels = names(cell.type.colors))
 
+
 # Subset to A0101-2 binding cells
 unique.binders = colnames(dex.subset)
 df = df[rownames(df) %in% unique.binders,]
@@ -129,7 +130,7 @@ scale_colour_manual(values = cell.type.colors) +
 stat_smooth(method = 'loess', colour = 'black') +
 facet_wrap(. ~ condition_collapsed) +
 theme_classic() +
-theme(strip.background = element_rect(colour="black", fill= 'lightgrey')) +
+theme(strip.background = element_rect(colour = 'black', fill = 'lightgrey')) +
 xlab('Pseudotime (Lineage 1)') +
 ylab('Clonotype size')
 # Lineage 2
@@ -139,7 +140,7 @@ scale_colour_manual(values = cell.type.colors) +
 stat_smooth(method = 'loess', colour = 'black') +
 facet_wrap(. ~ condition_collapsed) +
 theme_classic() +
-theme(strip.background = element_rect(colour="black", fill= 'lightgrey')) +
+theme(strip.background = element_rect(colour = 'black', fill = 'lightgrey')) +
 xlab('Pseudotime (Lineage 2)') +
 ylab('Clonotype size')
 dev.off()
