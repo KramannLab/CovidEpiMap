@@ -13,46 +13,13 @@ outdir = '~/sciebo/CovidEpiMap/epitope_analysis/'
 source('sc_source/sc_source.R')
 
 
-
-# GSEA function
-run_gsea = function(object, markers, category, plot.title = NULL, subcategory = NULL, out.dir = '.', file.prefix, n = 30){
-	# Fetch geneset
-	geneSets = msigdbr(species = 'Homo sapiens', category = category, subcategory = subcategory)
-	geneSets = geneSets[geneSets$human_gene_symbol %in% rownames(object),]
-	m_list = geneSets %>% split(x = .$human_gene_symbol, f = .$gs_name)
-
-	# Run GSEA
-	stats = markers$avg_log2FC
-	names(stats) = rownames(markers)
-	gsea = fgsea(pathways = m_list, stats = stats, minSize = 10, eps = 0.0)
-	order = order(gsea$padj, decreasing = FALSE)
-
-	# Plot
-	file.name = paste0(out.dir, '/', file.prefix, '_gsea_', paste0(c(category, subcategory), collapse = '_'))
-
-	pdf(file = paste0(file.name, '.pdf'), width = 10, height = 9)
-	print(plot_go(gsea.res = gsea,
-			gsea.res.order = order, 
-			n = n, 
-			plot.title = plot.title))
-	dev.off()
-
-	# Write to file
-	write.table(gsea[order, -8], 
-			file = paste0(file.name, '.txt'), 
-			sep = '\t', 
-			row.names = FALSE, 
-			quote = FALSE)
-}
-
-
-
-#---- Plot dextramer binding on UMAP
-
 sc = readRDS(file = paste0(indir, 'integrated.RNA.Tcells.annotated.rds'))
 DefaultAssay(sc) = 'RNA'
 Idents(sc) = 'integrated_annotations'
 
+
+
+#---- Plot dextramer binding on UMAP
 
 dextramers = c('A0201_5', 'A1101_30', 'A0201_6',
 				'A0101_2', 'A1101_29', 'A1101_23',
@@ -115,7 +82,6 @@ df = df[df$condition %ni% 'healthy',]
 df$integrated_annotations = factor(df$integrated_annotations, 
                                     levels = names(cell.type.colors))
 
-
 # Subset to A0101-2 binding cells
 unique.binders = colnames(dex.subset)
 df = df[rownames(df) %in% unique.binders,]
@@ -158,33 +124,40 @@ markers = FindMarkers(dex.subset, ident.1 = 'COVID',
 
 markers = markers[order(markers$avg_log2FC, decreasing = TRUE),]
 
-
 # Write to file
 markers.out = markers[markers$p_val_adj < 0.05,]
 markers.out$gene = rownames(markers.out)
 
+file.prefix = 'COVID_vs_NON-COVID_A0101-2_binding_cells'
+
 write.table(markers.out[,c(6,1:5)], 
-        file = paste0(outdir, 'COVID_vs_NON-COVID_A0101-2_binding_cells_dge.txt'),
+        file = paste0(outdir, file.prefix, '_dge.txt'),
         quote = FALSE, 
         sep = '\t', 
         row.names = FALSE)
 
 
 # GSEA
-# GO
-file.prefix = paste0('COVID_vs_NON-COVID_A0101-2_binding_cells')
+bg.genes = rownames(dex.subset)
+stats = markers$avg_log2FC
+names(stats) = rownames(markers)
+stats = stats[!is.na(stats)]
 
-run_gsea(object = dex.subset, markers = markers, category = 'C5', subcategory = 'BP',
+# GO
+run_gsea(bg.genes = bg.genes, stats = stats, 
+		category = 'C5', subcategory = 'BP',
 		out.dir = outdir, plot.title = 'GO',
 		file.prefix = file.prefix, n = 40)
 
 # PID
-run_gsea(object = dex.subset, markers = markers, category = 'C2', subcategory = 'PID',
+run_gsea(bg.genes = bg.genes, stats = stats, 
+		category = 'C2', subcategory = 'PID',
 		out.dir = outdir, plot.title = 'PID',
 		file.prefix = file.prefix)
 
 # Immunological signature
-run_gsea(object = dex.subset, markers = markers, category = 'C7',
+run_gsea(bg.genes = bg.genes, stats = stats, 
+		category = 'C7',
 		out.dir = outdir, plot.title = 'Immunological Signature',
 		file.prefix = file.prefix)
 
@@ -214,29 +187,36 @@ for (cell.type in cell.types){
 	markers.out$gene = rownames(markers.out)
 	cell.type.name = gsub(' ', '_', cell.type)
 
+	file.prefix = paste0('active_severe_', cell.type.name, '_binding_vs_nonbinding')
 	write.table(markers.out[,c(6, 1:5)], 
-			file = paste0(outdir, 'active_severe_', cell.type.name, '_binding_vs_nonbinding_dge.txt'), 
+			file = paste0(outdir, file.prefix, '_dge.txt'), 
 			sep = '\t',
 			row.names = FALSE, 
 			quote = FALSE)
 
 
 	# GSEA
+	stats = markers$avg_log2FC
+	names(stats) = rownames(markers)
+	stats = stats[!is.na(stats)]
+
 	# GO
-	file.prefix = paste0('active_severe_', cell.type.name, '_binding_vs_nonbinding')
-	run_gsea(object = sc, markers = markers, category = 'C5', subcategory = 'BP',
-			out.dir = outdir, plot.title = cell.type, 
-			file.prefix = file.prefix)
+	run_gsea(bg.genes = bg.genes, stats = stats, 
+			category = 'C5', subcategory = 'BP',
+			out.dir = outdir, plot.title = 'GO',
+			file.prefix = file.prefix, n = 40)
 
 	# PID
-	run_gsea(object = sc, markers = markers, category = 'C2', subcategory = 'PID',
-			out.dir = outdir, plot.title = cell.type, 
+	run_gsea(bg.genes = bg.genes, stats = stats, 
+			category = 'C2', subcategory = 'PID',
+			out.dir = outdir, plot.title = 'PID',
 			file.prefix = file.prefix)
 
 	# Immunological signature
-	run_gsea(object = sc, markers = markers, category = 'C7',
-			out.dir = outdir, plot.title = cell.type,
-			file.prefix = file.prefix)	
+	run_gsea(bg.genes = bg.genes, stats = stats, 
+			category = 'C7',
+			out.dir = outdir, plot.title = 'Immunological Signature',
+			file.prefix = file.prefix)
 }
 
 
@@ -244,7 +224,6 @@ for (cell.type in cell.types){
 #---- A0101-2 binding recovered severe vs recovered mild
 
 cell.types = c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1')
-
 
 for (cell.type in cell.types){
 	subset = subset(dex.subset, integrated_annotations == cell.type)
@@ -259,30 +238,37 @@ for (cell.type in cell.types){
 	markers.out = markers[markers$p_val_adj < 0.05,]
 	markers.out$gene = rownames(markers.out)
 	cell.type.name = gsub(' ', '_', cell.type)
-	file.name = paste0(cell.type.name, '_A0101-2_binding_recovered_severe_vs_recovered_mild')
 
+	file.prefix = paste0(cell.type.name, '_A0101-2_binding_recovered_severe_vs_recovered_mild')
 	write.table(markers.out[,c(6, 1:5)], 
-			file = paste0(outdir, file.name, '_dge.txt'), 
+			file = paste0(outdir, file.prefix, '_dge.txt'), 
 			sep = '\t',
 			row.names = FALSE, 
 			quote = FALSE)
 
 
 	# GSEA
+	stats = markers$avg_log2FC
+	names(stats) = rownames(markers)
+	stats = stats[!is.na(stats)]
+
 	# GO
-	run_gsea(object = subset, markers = markers, category = 'C5', subcategory = 'BP',
-			out.dir = outdir, plot.title = cell.type, 
-			file.prefix = file.name)
+	run_gsea(bg.genes = bg.genes, stats = stats, 
+			category = 'C5', subcategory = 'BP',
+			out.dir = outdir, plot.title = 'GO',
+			file.prefix = file.prefix, n = 40)
 
 	# PID
-	run_gsea(object = subset, markers = markers, category = 'C2', subcategory = 'PID',
-			out.dir = outdir, plot.title = cell.type, 
-			file.prefix = file.name)
+	run_gsea(bg.genes = bg.genes, stats = stats, 
+			category = 'C2', subcategory = 'PID',
+			out.dir = outdir, plot.title = 'PID',
+			file.prefix = file.prefix)
 
 	# Immunological signature
-	run_gsea(object = subset, markers = markers, category = 'C7',
-			out.dir = outdir, plot.title = cell.type,
-			file.prefix = file.name)	
+	run_gsea(bg.genes = bg.genes, stats = stats, 
+			category = 'C7',
+			out.dir = outdir, plot.title = 'Immunological Signature',
+			file.prefix = file.prefix)
 }
 
 
@@ -305,30 +291,37 @@ for (cell.type in cell.types){
 	markers.out = markers[markers$p_val_adj < 0.05,]
 	markers.out$gene = rownames(markers.out)
 	cell.type.name = gsub(' ', '_', cell.type)
-	file.name = paste0(cell.type.name, '_A0101-2_binding_severe_vs__mild')
-
+	
+	file.prefix = paste0(cell.type.name, '_A0101-2_binding_severe_vs__mild')
 	write.table(markers.out[,c(6, 1:5)], 
-			file = paste0(outdir, file.name, '_dge.txt'), 
+			file = paste0(outdir, file.prefix, '_dge.txt'), 
 			sep = '\t',
 			row.names = FALSE, 
 			quote = FALSE)
 
 
 	# GSEA
+	stats = markers$avg_log2FC
+	names(stats) = rownames(markers)
+	stats = stats[!is.na(stats)]
+
 	# GO
-	run_gsea(object = subset, markers = markers, category = 'C5', subcategory = 'BP',
-			out.dir = outdir, plot.title = cell.type, 
-			file.prefix = file.name)
+	run_gsea(bg.genes = bg.genes, stats = stats, 
+			category = 'C5', subcategory = 'BP',
+			out.dir = outdir, plot.title = 'GO',
+			file.prefix = file.prefix, n = 40)
 
 	# PID
-	run_gsea(object = subset, markers = markers, category = 'C2', subcategory = 'PID',
-			out.dir = outdir, plot.title = cell.type, 
-			file.prefix = file.name)
+	run_gsea(bg.genes = bg.genes, stats = stats, 
+			category = 'C2', subcategory = 'PID',
+			out.dir = outdir, plot.title = 'PID',
+			file.prefix = file.prefix)
 
 	# Immunological signature
-	run_gsea(object = subset, markers = markers, category = 'C7',
-			out.dir = outdir, plot.title = cell.type,
-			file.prefix = file.name)	
+	run_gsea(bg.genes = bg.genes, stats = stats, 
+			category = 'C7',
+			out.dir = outdir, plot.title = 'Immunological Signature',
+			file.prefix = file.prefix)
 }
 
 
