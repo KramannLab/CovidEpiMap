@@ -20,7 +20,7 @@ sc$celltype.condition = paste(Idents(sc), sc$condition)
 Idents(sc) = 'celltype.condition'
 
 
-
+# Cell type vs cell type across conditions
 for (cell.type in cell.types){
 	# Healthy vs active mild
 	condition = 'active_mild'
@@ -67,10 +67,29 @@ for (cell.type in cell.types){
 }
 
 
+# Global DE between COVID vs NON-COVID
+outdir = '~/sciebo/CovidEpiMap/diff_expression/'
+Idents(sc) = 'COVID'
+condition = 'COVID'
+control = 'NON-COVID'
+
+markers = FindMarkers(sc, ident.1 = condition, 
+                      ident.2 = control, 
+                      min.pct = 0.25, 
+                      logfc.threshold = 0)
+markers$gene = rownames(markers)
+
+write.table(markers[,c(6, 1:5)], 
+           file = paste0(outdir, 'integrated.diff.genes.', condition, '.vs.', control, '.txt'),
+           quote = FALSE, 
+           sep = '\t', 
+           row.names = FALSE)
+
+
 
 #---- Plot relevant diff genes
 
-indir = '~/sciebo/CovidEpiMap/integrated/diff_genes/analysis_diff_genes/'
+indir = '~/sciebo/CovidEpiMap/diff_expression/diff_genes/analysis_diff_genes/'
 genes = read.table(file = paste0(indir, 'relevant_genes_plot_DEG.txt'), header = TRUE)
 genes = genes$gene.name
 
