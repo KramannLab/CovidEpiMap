@@ -138,6 +138,9 @@ dev.off()
 
 #---- Plot differential expression of selected genes
 
+# Source
+# https://davemcg.github.io/post/lets-plot-scrna-dotplots/
+
 # Genes to plot
 genes = read.table(file = paste0(indir, 'relevant_genes_final_plot_DEG.txt'), header = TRUE)
 genes = genes$gene

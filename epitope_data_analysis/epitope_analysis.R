@@ -76,7 +76,7 @@ dev.off()
 #---- Clonotype size of A0101-2 binding cells vs pseudotime (severe and mild)
 
 # Get pseudotimes
-sc.subset = readRDS(file = paste0(indir, 'integrated.RNA.Tcells.pseudotime.subset.rds')))
+sc.subset = readRDS(file = paste0(indir, 'integrated.RNA.Tcells.pseudotime.subset.rds'))
 df = sc.subset@meta.data
 df = df[df$condition %ni% 'healthy',]
 df$integrated_annotations = factor(df$integrated_annotations, 
