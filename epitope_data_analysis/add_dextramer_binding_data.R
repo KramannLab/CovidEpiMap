@@ -8,7 +8,7 @@ library(Seurat)
 library(dplyr)
 indir = '~/sciebo/CovidEpiMap/integrated/'
 datdir = '~/sciebo/CovidEpiMap/tcr/'
-outdir = '~/sciebo/CovidEpiMap/epitope_analysis/'
+outdir = '~/sciebo/CovidEpiMap/epitope_analysis/updated/'
 '%ni%' = Negate('%in%')
 source('sc_source/sc_source.R')
 
