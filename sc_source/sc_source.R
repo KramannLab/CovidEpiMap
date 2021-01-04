@@ -433,6 +433,48 @@ run_gsea = function(bg.genes, stats, category, plot.title = NULL, subcategory = 
 
 
 
+#---- Nice GO plot
+plot_go_nice = function(gse, terms){
+  suppressPackageStartupMessages(library(ggplot2))
+  suppressPackageStartupMessages(library(viridis))
+  
+  # Format terms 
+  terms.tmp = stringr::str_to_upper(terms)
+  terms.tmp = paste0('GO_', gsub(' ', '_', terms.tmp))
+  
+  # Subset table
+  gse = gse[gse$pathway %in% terms.tmp,]
+  rownames(gse) = gse$pathway
+  gse = gse[terms.tmp,]
+  gse$pathway = terms
+  gse$size = abs(gse$NES)
+  
+  # Plot
+  p = gse %>%
+    ggplot(aes(x = NES, y = pathway, color = padj, size = size)) +
+    geom_point() +
+    cowplot::theme_cowplot() + 
+    theme(axis.line  = element_blank(),
+          axis.ticks = element_blank()) +
+    scale_colour_gradient2(low = viridis(2)[2], 
+                           mid = 'lightgrey', 
+                           high = viridis(2)[1], 
+                           midpoint = 0.05, 
+                           limits = c(0,0.1), 
+                           oob = scales::squish,
+                           name = 'pAdj') +
+    labs(x = 'NES',
+         y = '',
+         size = '') +
+    guides(size = 'none') +
+    scale_size(range = c(2,7),
+               limits = c(1,3))
+  return(p)
+}
+
+
+
+
 #---- Plot smoothed expression of genes from tradeSeq
 
 plot_top_genes = function(gene.set, model, n, out.dir, file.name){
@@ -480,4 +522,6 @@ get_violin = function(object, features.use){
     
     return(p)
 }
+
+
 

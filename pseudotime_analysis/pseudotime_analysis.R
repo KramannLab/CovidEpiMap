@@ -76,6 +76,8 @@ dev.off()
 # Add pseudotimes (arclength) to meta data for visualisation
 pseudotime2 = slingPseudotime(sds, na = FALSE)
 sc.subset$slingshot_pseudotime = pseudotime2[,2]
+sc.subset$slingshot_pseudotime_curve1 = pseudotime[,1]
+sc.subset$slingshot_pseudotime_curve2 = pseudotime[,2]
 saveRDS(sc.subset, file = paste0(indir, 'integrated.RNA.Tcells.pseudotime.subset.rds'))
 
 
@@ -87,8 +89,6 @@ dev.off()
 
 #---- Plot condition density along pseudotime
 
-sc.subset$slingshot_pseudotime_curve1 = pseudotime[,1]
-sc.subset$slingshot_pseudotime_curve2 = pseudotime[,2]
 df = sc.subset@meta.data
 df = df[df$condition %ni% 'healthy',]
 df$integrated_annotations = factor(df$integrated_annotations, 
@@ -240,6 +240,36 @@ pdf(file = paste0(outdir, 'integrated_Tcells_clonal_expansion_lineage2_density.p
 plot_grid(top_row, bottom_row, ncol = 1, rel_heights = c(1/16, 15/16))
 dev.off()
 
+
+
+#---- Clonotype size vs pseudotime
+
+df = sc.subset@meta.data
+df$integrated_annotations = factor(df$integrated_annotations, 
+                                   levels = names(cell.type.colors))
+
+pdf(file = paste0(outdir, 'integrated_Tcells_all_clonotype_size_vs_pseudotime.pdf'), width = 8)
+# Lineage 1
+ggplot(df, aes(x = slingshot_pseudotime_curve1, y = clonotype_size)) + 
+  geom_point(aes(colour = integrated_annotations)) + 
+  scale_colour_manual(values = cell.type.colors) +
+  stat_smooth(method = 'loess', colour = 'black') +
+  facet_wrap(. ~ condition) +
+  theme_classic() +
+  theme(strip.background = element_rect(colour = 'black', fill = 'lightgrey')) +
+  xlab('Pseudotime (Lineage 1)') +
+  ylab('Clonotype size')
+# Lineage 2
+ggplot(df, aes(x = slingshot_pseudotime_curve2, y = clonotype_size)) + 
+  geom_point(aes(colour = integrated_annotations)) + 
+  scale_colour_manual(values = cell.type.colors) +
+  stat_smooth(method = 'loess', colour = 'black') +
+  facet_wrap(. ~ condition) +
+  theme_classic() +
+  theme(strip.background = element_rect(colour = 'black', fill = 'lightgrey')) +
+  xlab('Pseudotime (Lineage 2)') +
+  ylab('Clonotype size')
+dev.off()
 
 
 #--- Check for imbalance in local distribution of cells according to condition
