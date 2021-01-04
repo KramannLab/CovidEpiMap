@@ -204,6 +204,33 @@ for (cell.type in names(cell.type.colors)){
 dev.off()
 
 
+# Dextramer A0101-2 binding cells
+
+outdir = '~/sciebo/CovidEpiMap/epitope_analysis/'
+unique.binders = colnames(subset(sc, A0101_2 == 'YES' & A0201_5 == 'NO' & A1101_30 == 'NO' &
+         A1101_23 == 'NO' & A1101_29 == 'NO' & A0201_4 == 'NO' & 
+         A0201_6 == 'NO' & A0201_12 == 'NO'))
+
+sc[['A0101_2_binding']] = ifelse(colnames(sc) %in% unique.binders, 'unique_binder', 'non_binder')
+cell.types = c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1', 'CD8+ effector memory T cells 2')
+
+pdf(file = paste0(outdir, 'active_severe_A0101_2_unique_binding_non_binding_activation_markers.pdf'))
+for (cell.type in cell.types){
+  subset = subset(sc, integrated_annotations == cell.type & condition == 'active_severe')
+  subset[['ADT_UPDATED']] = NULL
+  
+  print(DotPlot(subset, features = rev(genes), group.by = 'A0101_2_binding', dot.scale = 8, assay = 'RNA') + 
+          coord_flip() + 
+          scale_colour_gradient2(low = 'blue', mid = 'lightgrey', high = 'red', 
+                                 midpoint = 0, limits = c(-2,2), oob = scales::squish) +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                axis.title.x = element_blank(),
+                axis.title.y = element_blank()) +
+          ggtitle(cell.type))
+}
+dev.off()
+
+
 
 #---- Plot selected GO terms
 
