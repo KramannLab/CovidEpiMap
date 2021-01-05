@@ -8,6 +8,10 @@ library(Seurat)
 library(dplyr)
 library(ggplot2)
 library(viridis)
+library(viper)
+library(tidyverse)
+library(progeny)
+library(dorothea)
 '%ni%' = Negate('%in%')
 indir = '~/sciebo/CovidEpiMap/integrated/'
 outdir = '~/sciebo/CovidEpiMap/epitope_analysis/'
@@ -329,55 +333,72 @@ for (cell.type in cell.types){
 }
 
 
+# TF activity inference with DoRothEA
+# Prepare human DoRothEA regulons
+dorothea.path = 'https://raw.githubusercontent.com/saezlab/ConservedFootprints/master/data/dorothea_benchmark/regulons/dorothea_regulon_human_v1.csv'
+dorothea_regulon_human = read_csv(dorothea.path)
 
-#---- A0101-2 binding active severe vs healthy
 
-cell.types = c('CD8+ TEMRA cells')
+# Group regulons
+regulon = dorothea_regulon_human %>%
+  dplyr::filter(confidence %in% c('A','B','C')) %>% 
+  split(.$tf) %>%
+  map(function(dat) {
+    tf = dat %>% distinct(tf) %>% pull()
+    targets = setNames(dat$mor, dat$target)
+    likelihood = dat$likelihood
+    list(tfmode = targets, likelihood = likelihood)
+  })
+
+outdir = paste0(outdir, 'severe_vs_mild/')
 
 for (cell.type in cell.types){
-  subset = subset(dex.subset, integrated_annotations == cell.type)
-  Idents(subset) = 'condition'
+  cell.type.name = gsub(' ', '_', cell.type)
+  dge = read.table(file = paste0(outdir, cell.type.name, '_A0101-2_binding_severe_vs_mild_dge.txt'),
+                   header = TRUE, sep = '\t')
   
-  # DGEA
-  markers = FindMarkers(subset, ident.1 = 'active_severe', 
-                        ident.2 = 'healthy', logfc.threshold = 0)
-  markers = markers[order(markers$avg_log2FC, decreasing = TRUE),]
+  # Estimate z-score values for the gene expression signature (GES)
+  myStatistics = matrix(dge$avg_log2FC, dimnames = list(dge$gene, 'avg_log2FC'))
+  myPvalue = matrix(dge$p_val, dimnames = list(dge$gene, 'p_val'))
+  mySignature = (qnorm(myPvalue/2, lower.tail = FALSE) * sign(myStatistics))[, 1]
+  mySignature = mySignature[order(mySignature, decreasing = T)]
+  
+  # Estimate TF activity
+  mrs = msviper(ges = mySignature, regulon = regulon, minsize = 4, 
+                ges.filter = FALSE, verbose = FALSE)
+  TF_activities = data.frame(Regulon = names(mrs$es$nes),
+                             Size = mrs$es$size[ names(mrs$es$nes) ], 
+                             NES = mrs$es$nes, 
+                             p.value = mrs$es$p.value, 
+                             FDR = p.adjust(mrs$es$p.value, method = 'fdr'))
+  TF_activities = TF_activities[order(TF_activities$FDR),]
   
   # Write to file
-  markers.out = markers[markers$p_val_adj < 0.05,]
-  markers.out$gene = rownames(markers.out)
-  cell.type.name = gsub(' ', '_', cell.type)
-  
-  file.prefix = paste0(cell.type.name, '_A0101-2_binding_active_severe_vs_healthy')
-  write.table(markers.out[,c(6, 1:5)], 
-              file = paste0(outdir, file.prefix, '_dge.txt'), 
+  write.table(TF_activities, 
+              file = paste0(outdir, cell.type.name, '_A0101-2_binding_severe_vs_mild_tf_activity.txt'),
               sep = '\t',
-              row.names = FALSE, 
+              row.names = FALSE,
               quote = FALSE)
-  
-  
-  # GSEA
-  stats = markers$avg_log2FC
-  names(stats) = rownames(markers)
-  stats = stats[!is.na(stats)]
-  
-  # GO
-  run_gsea(bg.genes = bg.genes, stats = stats, 
-           category = 'C5', subcategory = 'BP',
-           out.dir = outdir, plot.title = 'GO',
-           file.prefix = file.prefix, n = 40)
-  
-  # PID
-  run_gsea(bg.genes = bg.genes, stats = stats, 
-           category = 'C2', subcategory = 'PID',
-           out.dir = outdir, plot.title = 'PID',
-           file.prefix = file.prefix)
-  
-  # Immunological signature
-  run_gsea(bg.genes = bg.genes, stats = stats, 
-           category = 'C7',
-           out.dir = outdir, plot.title = 'Immunological Signature',
-           file.prefix = file.prefix)
 }
+
+
+# Pathway activity inference with PROGENy
+
+subset = subset(dex.subset, integrated_annotations %in% cell.types & condition %ni% 'healthy')
+Idents(subset) = 'condition_collapsed'
+
+subset = progeny(subset, scale = FALSE, organism = 'Human', top = 500, 
+             perm = 1, return_assay = TRUE)
+subset = ScaleData(subset, assay = 'progeny')
+
+pdf(file = paste0(outdir, cell.type.name, '_A0101-2_binding_severe_vs_mild_pathway_activity.pdf'))
+for (pathway in rownames(subset[['progeny']])){
+  print(VlnPlot(subset, features = pathway, 
+                group.by = 'integrated_annotations', 
+                pt.size = 0, split.by = 'condition_collapsed',
+                assay = 'progeny', slot = 'scale.data', 
+                cols = viridis(3)))
+}
+dev.off()
 
 

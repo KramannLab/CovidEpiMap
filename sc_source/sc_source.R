@@ -253,7 +253,7 @@ get_abundance = function(df, condition.vector){
 
 #---- TF activity inference with DoRothEA (regulon has to be built prior to this)
 
-run_dorothea = function(case, control, diff.indir, dorothea_regulon_human, regulon){
+run_dorothea = function(case, control, diff.indir, out.dir, dorothea_regulon_human, regulon){
   suppressPackageStartupMessages(library(viper))
 
   TF_activities_df = data.frame(tf = unique(dorothea_regulon_human$tf), 
@@ -289,6 +289,15 @@ run_dorothea = function(case, control, diff.indir, dorothea_regulon_human, regul
                            p.value = mrs$es$p.value, 
                            FDR = p.adjust(mrs$es$p.value, method = 'fdr'))
         TF_activities = TF_activities[order(TF_activities$FDR),]
+
+    # Write to file per cell type
+    write.table(TF_activities, 
+      file = paste0(out.dir, case, '_vs_', control, '_tf_activity_', 
+                    gsub(' ', '_', cell.type), '.txt'),
+      sep = '\t',
+      row.names = FALSE,
+      quote = FALSE)
+
     TF_activities_df[[cell.type]] = TF_activities[rownames(TF_activities_df),'NES']
   }
   return(TF_activities_df)
