@@ -138,15 +138,15 @@ dev.off()
 
 
 
-#---- Run PROGENy on cell clusters
+#---- Run PROGENy on cell types
 
 sc = progeny(sc, scale = FALSE, organism = 'Human', top = 500, 
 			perm = 1, return_assay = TRUE)
 sc = ScaleData(sc, assay = 'progeny')
 
 pdf(file = paste0(outdir,'progeny_violin.pdf'), width = 17)
-for (gene in rownames(sc[['progeny']])){
-	print(VlnPlot(sc, features = gene, 
+for (pathway in rownames(sc[['progeny']])){
+	print(VlnPlot(sc, features = pathway, 
 		group.by = 'integrated_annotations', 
 		pt.size = 0, split.by = 'condition',
 		assay = 'progeny', slot = 'scale.data'))
