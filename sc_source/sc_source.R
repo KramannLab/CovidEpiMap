@@ -278,7 +278,7 @@ run_dorothea = function(case, control, diff.indir, out.dir, dorothea_regulon_hum
     myStatistics = matrix(diff.genes$avg_log2FC, dimnames = list(diff.genes$gene, 'avg_log2FC'))
     myPvalue = matrix(diff.genes$p_val, dimnames = list(diff.genes$gene, 'p_val'))
     mySignature = (qnorm(myPvalue/2, lower.tail = FALSE) * sign(myStatistics))[, 1]
-    mySignature = mySignature[order(mySignature, decreasing = T)]
+    mySignature = mySignature[order(mySignature, decreasing = TRUE)]
 
     # Estimate TF activity
         mrs = msviper(ges = mySignature, regulon = regulon, minsize = 4, 
@@ -508,6 +508,10 @@ plot_top_genes = function(gene.set, model, n, out.dir, file.name){
 #----Combined marker violin plot
 
 get_violin = function(object, features.use){
+  suppressPackageStartupMessages(library(ggplot2))
+  suppressPackageStartupMessages(library(Seurat))
+  suppressPackageStartupMessages(library(cowplot))
+
     p = VlnPlot(object = object, 
                  features = features.use, 
                  pt.size = 0, cols = cell.type.colors,
@@ -534,3 +538,43 @@ get_violin = function(object, features.use){
 
 
 
+
+#---- Compute p-values and make violin plots for Progeny pathway inference results
+compute_stats = function(df, celltype, pathways, conditions, plot = FALSE){
+  suppressPackageStartupMessages(library(tidyverse))
+  suppressPackageStartupMessages(library(ggplot2))
+  suppressPackageStartupMessages(library(viridis))
+  
+  p = NULL
+  df_sub = df %>% filter(condition %in% conditions,
+                         Pathway %in% pathways,
+                         cell.type %in% celltype)
+  
+  # p.adjust for number of cells * number of pathways tested
+  num_test = nrow(df_sub) * length(pathways)
+  
+  stats = df_sub %>% group_by(Pathway) %>% 
+    nest() %>%
+    mutate(wilcox = map(data, function(df){
+      stest = wilcox.test(Activity ~ condition, data = df, alternative = 'two.sided')
+      broom::tidy(stest) %>%
+        mutate(corr_pvalue = p.adjust(p.value, method = 'BH', n = num_test))})) %>%
+    select(-data) %>%
+    unnest(wilcox) %>%
+    ungroup() %>%
+    arrange(corr_pvalue) %>% 
+    as.data.frame
+  
+  if(plot){
+    p = ggplot(df_sub, aes(x = condition, y = Activity, fill = condition)) +
+      geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), colour = 'lightgrey') +
+      theme_classic() + 
+      scale_fill_viridis(discrete = TRUE, option = 'viridis') +
+      theme(strip.background = element_rect(fill = 'lightgrey'),
+            axis.ticks = element_blank()) +
+      xlab('') +
+      ylab('Pathway activity') +
+      facet_wrap( ~ Pathway)
+  }
+  return(list('stats' = stats, 'p' = p))
+}

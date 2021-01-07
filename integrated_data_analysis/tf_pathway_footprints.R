@@ -10,10 +10,12 @@ library(dorothea)
 library(dplyr)
 library(Seurat)
 library(tibble)
+library(viridis)
 library(tidyverse)
+library(pheatmap)
 library(tidyr)
 library(viper)
-
+source('sc_source/sc_source.R')
 
 indir = '~/sciebo/CovidEpiMap/integrated/'
 setwd(indir)
@@ -138,19 +140,73 @@ dev.off()
 
 
 
-#---- Run PROGENy on cell types
+#---- Run PROGENy
+
+sc$integrated_annotations_condition = paste(sc$condition, sc$integrated_annotations, sep = '.')
+Idents(sc) = 'integrated_annotations_condition'
 
 sc = progeny(sc, scale = FALSE, organism = 'Human', top = 500, 
 			perm = 1, return_assay = TRUE)
 sc = ScaleData(sc, assay = 'progeny')
 
-pdf(file = paste0(outdir,'progeny_violin.pdf'), width = 17)
-for (pathway in rownames(sc[['progeny']])){
-	print(VlnPlot(sc, features = pathway, 
-		group.by = 'integrated_annotations', 
-		pt.size = 0, split.by = 'condition',
-		assay = 'progeny', slot = 'scale.data'))
-}
-dev.off()
 
+# Create dataframe of clusters
+CellsClusters = data.frame(Cell = names(Idents(sc)),
+                            CellType = as.character(Idents(sc)),
+                            stringsAsFactors = FALSE)
+
+# Transform to data frame
+progeny_scores_df = as.data.frame(t(GetAssayData(sc, slot = 'scale.data', assay = 'progeny'))) %>%
+  rownames_to_column('Cell') %>%
+  gather(Pathway, Activity, -Cell)
+
+# Match Progeny scores with the clusters
+progeny_scores_df = inner_join(progeny_scores_df, CellsClusters)
+
+# Summarize Progeny scores 
+summarized_progeny_scores = progeny_scores_df %>%
+  group_by(Pathway, CellType) %>%
+  summarise(avg = mean(Activity), std = sd(Activity))
+
+# Create dataframe for plotting
+summarized_progeny_scores_df = summarized_progeny_scores %>%
+  dplyr::select(-std) %>%
+  spread(Pathway, avg) %>%
+  data.frame(row.names = 1, check.names = FALSE, stringsAsFactors = FALSE)
+
+
+# Plot heatmap
+annotation = data.frame(condition = sapply(strsplit(row.names(summarized_progeny_scores_df),'\\.'), `[`, 1),
+                         row.names = row.names(summarized_progeny_scores_df))
+celltype = sapply(strsplit(row.names(summarized_progeny_scores_df),'\\.'), `[`, 2)
+
+condition = c('healthy', 'active_mild', 'active_severe',
+               'recovered_mild', 'recovered_severe')
+annotation$condition = factor(annotation$condition, levels = condition)
+condition.colors = viridis(5)
+names(condition.colors) = condition
+
+paletteLength = 100
+progenyBreaks = c(seq(min(summarized_progeny_scores_df), 0,
+                      length.out = ceiling(paletteLength/2) + 1),
+                  seq(max(summarized_progeny_scores_df)/paletteLength,
+                      max(summarized_progeny_scores_df),
+                      length.out = floor(paletteLength/2)))
+
+pdf(file = paste0(out.dir, 'progeny_heatmap.pdf'), width = 10, height = 5)
+pheatmap(t(summarized_progeny_scores_df[,-1]),
+         fontsize = 9,
+         fontsize_row = 9,
+         color = colorRampPalette(c('Darkblue', 'white', 'red'))(paletteLength), 
+         breaks = progenyBreaks,
+         main = '', 
+         angle_col = 90,
+         treeheight_col = 0,  
+         border_color = NA,
+         annotation_col = annotation,
+         annotation_colors = list(condition = condition.colors),
+         labels_col = celltype,
+         cluster_cols = FALSE,
+         annotation_names_col = FALSE)
+dev.off()
 

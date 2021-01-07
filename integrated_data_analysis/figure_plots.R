@@ -7,6 +7,8 @@
 library(Seurat)
 library(ggplot2)
 library(cowplot)
+library(dplyr)
+library(viridis)
 source('sc_source/sc_source.R')
 
 
@@ -424,3 +426,21 @@ for (lineage in names(term.list)){
   dev.off()
   width = 7.5
 }
+
+
+
+#---- Marker expression
+
+subset = subset(sc, condition %in% c('active_severe', 'active_mild'))
+subset$condition = droplevels(subset$condition)
+
+markers = c('CLEC2B', 'KLRF1')
+pdf(file = paste0(indir, 'integrated_Tcells_CLEC2B_KLRF1.pdf'))
+for (marker in markers){
+  print(VlnPlot(subset, feature = marker, split.by = 'condition', 
+        pt.size = 0, split = TRUE, cols = viridis(2)) + 
+          coord_flip() +
+          xlab(''))
+}
+dev.off()
+
