@@ -18,6 +18,10 @@ sc = readRDS('integrated.RNA.Tcells.annotated.rds')
 
 
 # Prepare data frame with pathwway scores
+CellsClusters = data.frame(Cell = names(Idents(sc)),
+                           CellType = as.character(Idents(sc)),
+                           stringsAsFactors = FALSE)
+
 progeny_scores_df = as.data.frame(t(GetAssayData(sc, slot = 'scale.data', assay = 'progeny'))) %>%
   rownames_to_column('Cell') %>%
   gather(Pathway, Activity, -Cell)
@@ -96,7 +100,7 @@ dev.off()
 
 # CD8+ cycling effector T cells
 celltype = 'CD8+ cycling effector T cells'
-pathways = c('P53', 'JAK-STAT', 'TGFb', 'TNFa', 'NFkB')
+pathways = c('p53', 'JAK-STAT', 'TGFb', 'TNFa', 'NFkB')
 test.stats = compute_stats(df = progeny_scores_df, celltype = celltype, 
                            pathways = pathways, conditions = conditions, plot = TRUE)
 
