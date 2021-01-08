@@ -542,6 +542,7 @@ get_violin = function(object, features.use){
 
 
 #---- Compute p-values and make violin plots for Progeny pathway inference results
+
 compute_stats = function(df, celltype, pathways, conditions, plot = FALSE){
   suppressPackageStartupMessages(library(tidyverse))
   suppressPackageStartupMessages(library(ggplot2))
@@ -580,3 +581,50 @@ compute_stats = function(df, celltype, pathways, conditions, plot = FALSE){
   }
   return(list('stats' = stats, 'p' = p))
 }
+
+
+
+
+#---- Nice dot plot of differential expression results from FindMakrers
+
+# Source
+# https://davemcg.github.io/post/lets-plot-scrna-dotplots/
+plot_dge_nice = function(dge.table, genes){
+  suppressPackageStartupMessages(library(dplyr))
+  suppressPackageStartupMessages(library(ggplot2))
+  suppressPackageStartupMessages(library(viridis))
+
+  # Get genes and stats to plot
+  gene.list = list()
+  for (i in 1:length(dge.table)){
+    table = dge.table[[i]]
+    
+    col = table %>% 
+      filter(gene %in% genes) %>% 
+      select(gene, avg_log2FC, p_val_adj) %>% 
+      mutate(cluster = names(dge.table[i]),
+             log10_padj = -log10(p_val_adj))
+    
+    gene.list[[i]] = col
+  }
+  gene.table = do.call(rbind, gene.list)
+  gene.table$log10_padj_edit = gene.table$log10_padj
+  gene.table[gene.table$log10_padj > 15,'log10_padj_edit'] = 15
+  
+  # Plot
+  p = gene.table %>%
+    ggplot(aes(x = cluster, y = gene, color = avg_log2FC, size = log10_padj_edit)) +
+    geom_point() +
+    scale_color_viridis_c(name = 'Log2FC') + 
+    cowplot::theme_cowplot() + 
+    theme(axis.line  = element_blank(),
+          axis.text.x = element_text(angle = 90, hjust = 1, size = 8),
+          axis.text.y = element_text(size = 8),
+          axis.ticks = element_blank()) +
+    labs(x = '',
+         y = '',
+         size = '-log10(pAdj)')
+  
+  return(p)
+}
+

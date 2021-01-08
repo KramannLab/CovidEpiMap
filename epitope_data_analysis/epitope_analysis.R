@@ -59,12 +59,12 @@ dev.off()
 
 #---- Plot clonal expansion of non-binding cells
 
-subset = subset(sc, A0201_5 == 'NO' & A1101_30 == 'NO' & A0201_6 == 'NO' & 
+non.binders = subset(sc, A0201_5 == 'NO' & A1101_30 == 'NO' & A0201_6 == 'NO' & 
 					A0101_2 == 'NO' & A1101_29 == 'NO' & A1101_23 == 'NO' & 
 					A0201_4 == 'NO' & A0201_12 == 'NO')
 
 pdf(file = paste0(outdir, 'clonal_expansion_non_binding_cells.pdf'))
-FeaturePlot(subset, feature = 'clonotype_size', cols = c('yellow', 'red'), order = TRUE)
+FeaturePlot(non.binders, feature = 'clonotype_size', cols = c('yellow', 'red'), order = TRUE)
 dev.off()
 
 
@@ -131,7 +131,6 @@ markers = FindMarkers(dex.subset, ident.1 = 'COVID',
       				ident.2 = 'NON-COVID', 
       				min.pct = 0.25,
       				logfc.threshold = 0)
-
 markers = markers[order(markers$avg_log2FC, decreasing = TRUE),]
 
 # Write to file
@@ -139,7 +138,6 @@ markers.out = markers[markers$p_val_adj < 0.05,]
 markers.out$gene = rownames(markers.out)
 
 file.prefix = 'COVID_vs_NON-COVID_A0101-2_binding_cells'
-
 write.table(markers.out[,c(6,1:5)], 
         file = paste0(outdir, file.prefix, '_dge.txt'),
         quote = FALSE, 
@@ -330,5 +328,31 @@ for (cell.type in cell.types){
 			category = 'C7',
 			out.dir = outdir, plot.title = 'Immunological Signature',
 			file.prefix = file.prefix)
+}
+
+#---- Epitope non-binding cells severe vs mild
+
+cell.types = c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1')
+
+for (cell.type in cell.types){
+  subset = subset(non.binders, integrated_annotations == cell.type)
+  Idents(subset) = 'condition_collapsed'
+  
+  # DGEA
+  markers = FindMarkers(subset, ident.1 = 'severe', 
+                        ident.2 = 'mild', logfc.threshold = 0)
+  markers = markers[order(markers$avg_log2FC, decreasing = TRUE),]
+  
+  # Write to file
+  markers.out = markers[markers$p_val_adj < 0.05,]
+  markers.out$gene = rownames(markers.out)
+  cell.type.name = gsub(' ', '_', cell.type)
+  
+  file.prefix = paste0(cell.type.name, '_non_binding_severe_vs_mild')
+  write.table(markers.out[,c(6, 1:5)], 
+              file = paste0(outdir, file.prefix, '_dge.txt'), 
+              sep = '\t',
+              row.names = FALSE, 
+              quote = FALSE)
 }
 
