@@ -128,16 +128,12 @@ in.dir = '~/sciebo/CovidEpiMap/trajectory_analysis/'
 comp = 'start_vs_end_test'
 outdir = paste0(in.dir, comp, '/')
 
-term.list = list('lineage1' = c('Viral gene expression',
-                                'Response to cytokine',
-                                'Protein targeting to membrane',
+term.list = list('lineage1' = c('Protein targeting to membrane',
                                 'Immune effector process',
                                 'Defense response',
                                 'Cell activation'),
-                 'lineage2' = c('Viral gene expression',
-                                'Negative regulation of viral genome replication',
+                 'lineage2' = c('Negative regulation of viral genome replication',
                                 'Regulation of Natural Killer cell activation',
-                                'Positive regulation of natural killer cell mediated immunity',
                                 'Positive regulation of cytokine production involved in immune response',
                                 'Positive regulation of innate immune response',
                                 'Negative regulation of lymphocyte activation')) 
@@ -163,13 +159,9 @@ for (lineage in names(term.list)){
 # Lineage split test and diff end test
 term.list = list('lineage_split_test' = c('Sensory Perception of Smell',
                                           'Regulation of Natural Killer Cell Activation',
-                                          'Positive regulation of natural killer cell mediated immunity',
-                                          'Positive regulation of cytokine production involved in immune response',
                                           'Positive regulation of immune effector process',
                                           'Apoptotic cell clearance'),
-                 'diff_end_test' = c('Positive regulation of natural killer cell mediated immunity',
-                                     'ARP2 3 Complex mediated Actin Nucleation',
-                                     'Actin Polymerization or Depolymerization',
+                 'diff_end_test' = c('ARP2 3 Complex mediated Actin Nucleation',
                                      'Apoptotic mitochondrial changes',
                                      'Apoptotic process'))
 
@@ -194,17 +186,13 @@ for (comp in names(term.list)){
 comp = 'condition_test'
 outdir = paste0(in.dir, comp, '/')
 
-term.list = list('lineage1' = c('Viral gene expression',
-                                'Translational initiation',
-                                'Cytoplasmatic translation',
+term.list = list('lineage1' = c('Cytoplasmatic translation',
                                 'Innate Immune response',
                                 'Adaptive Immune response',
                                 'Immune effector process',
                                 'Regulation of immune response'),
-                 'lineage2' = c('Viral gene expression',
-                                'Regulation of Natural Killer cell activation',
+                 'lineage2' = c('Regulation of Natural Killer cell activation',
                                 'Regulation of cytokine production involved in immune response',
-                                'Positive regulation of Natural Killer cell mediated immunity',
                                 'Positive regulation of innate immune response',
                                 'Positive regulation of cytokine production involved in immune response')) 
 

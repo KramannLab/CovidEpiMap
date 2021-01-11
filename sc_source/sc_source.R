@@ -407,6 +407,7 @@ plot_go = function(gsea.res, gsea.res.order, plot.title = NULL, n = 20){
 
 
 #---- GSEA function
+
 run_gsea = function(bg.genes, stats, category, plot.title = NULL, subcategory = NULL, out.dir = '.', file.prefix, n = 30){
   suppressPackageStartupMessages(library(msigdbr))
   suppressPackageStartupMessages(library(fgsea))
@@ -443,6 +444,7 @@ run_gsea = function(bg.genes, stats, category, plot.title = NULL, subcategory = 
 
 
 #---- Nice GO plot
+
 plot_go_nice = function(gse, terms){
   suppressPackageStartupMessages(library(ggplot2))
   suppressPackageStartupMessages(library(viridis))
@@ -479,7 +481,8 @@ plot_go_nice = function(gse, terms){
          size = '') +
     guides(size = 'none') +
     scale_size(range = c(2,7),
-               limits = c(1,3))
+               limits = c(1,3)) +
+    coord_fixed(xlim = c(-3, 3))
   return(p)
 }
 
