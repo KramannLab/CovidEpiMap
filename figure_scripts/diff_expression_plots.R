@@ -42,7 +42,16 @@ cell.types = sub(pattern, '', de.files)
 cell.types = sub('_A0101-2_binding_', '', cell.types)
 names(dge.table) = cell.types
 
-pdf(file = paste0(indir, '../A0101-2_binding_severe_vs_mild_selected_diff_genes.pdf'), height = 5, width = 4)
+pdf(file = paste0(indir, '../A0101-2_binding_severe_vs_mild_selected_diff_genes_activation.pdf'), height = 5, width = 4)
+plot_dge_nice(dge.table = dge.table, genes = genes)
+dev.off()
+
+
+# General DEGs to plot
+genes = read.table(file = paste0(indir, 'DEG_epitope_specific_cells.txt'), header = TRUE)
+genes = genes$gene
+
+pdf(file = paste0(indir, '../A0101-2_binding_severe_vs_mild_selected_diff_genes.pdf'), height = 11, width = 4)
 plot_dge_nice(dge.table = dge.table, genes = genes)
 dev.off()
 
