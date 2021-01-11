@@ -5,6 +5,7 @@
 #---- Plot selected GO terms
 
 library(dplyr)
+library(cowplot)
 source('sc_source/sc_source.R')
 
 
@@ -82,8 +83,8 @@ for (cell.type in names(term.list)){
                    header = TRUE, sep = '\t')
   
   # Plot
-  if ('Antigen processing and presentation of peptide or polysaccharide antigen via MHC class II' %in% terms){width = 11}
-  pdf(file = paste0(outdir, comp, '_', gsub(' ', '_', cell.type), '_selected_GO.pdf'), width = width, height = 3)
+  if ('Antigen processing and presentation of peptide or polysaccharide antigen via MHC class II' %in% terms){width = 12}
+  pdf(file = paste0(outdir, comp, '_', gsub(' ', '_', cell.type), '_selected_GO.pdf'), width = width, height = 4)
   print(plot_go_nice(gse = gse, terms = terms))
   dev.off()
   width = 7.5
