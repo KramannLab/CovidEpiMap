@@ -72,7 +72,10 @@ term.list = list(
                         'GO Antigen processing and presentation of peptide or polysaccharide antigen via MHC class II',
                         'GO Adaptive immune response'))
 
+# List for selected GOs
 plot.list = list()
+# List for all sig GOs (for supplements)
+all.plot.list = list()
 
 for (cell.type in names(term.list)){
   # Get selected terms
@@ -82,9 +85,17 @@ for (cell.type in names(term.list)){
   indir = paste0(in.dir, comp, '/', gsub(' ', '_', cell.type), '/')
   gse = read.table(file = paste0(indir, comp, '_', gsub(' ', '_', cell.type), '_gsea_C5_BP.txt'),
                    header = TRUE, sep = '\t')
+  gse = gse[complete.cases(gse),]
   
   title = paste0(comp, '_', gsub(' ', '_', cell.type))
   plot.list[[title]] = plot_go_nice(gse = gse, terms = terms, title = title)
+  
+  if (nrow(gse[gse$padj < 0.05,]) > 0){
+    gse = gse[gse$padj < 0.05,]
+    gse = gse[order(gse$NES, decreasing= TRUE),]
+    terms = gse$pathway
+    all.plot.list[[title]] = plot_go_nice(gse = gse, terms = head(terms,30), title = title)
+  }
 }
 
 
@@ -110,8 +121,16 @@ for (cell.type in names(term.list)){
   gse1 = read.table(file = paste0(indir, title, '_gsea_C5_BP.txt'), header = TRUE, sep = '\t')
   gse2 = read.table(file = paste0(indir, title, '_gsea_C2_PID.txt'), header = TRUE, sep = '\t')
   gse = rbind(gse1, gse2)
+  gse = gse[complete.cases(gse),]
   
-  plot.list[[file.prefix]] = plot_go_nice(gse = gse, terms = terms, title = title)
+  plot.list[[title]] = plot_go_nice(gse = gse, terms = terms, title = title)
+  
+  if (nrow(gse[gse$padj < 0.05,]) > 0){
+    gse = gse[gse$padj < 0.05,]
+    gse = gse[order(gse$NES, decreasing= TRUE),]
+    terms = gse$pathway
+    all.plot.list[[title]] = plot_go_nice(gse = gse, terms = head(terms,30), title = title)
+  }
 }
 
 
@@ -142,8 +161,16 @@ for (lineage in names(term.list)){
   title = paste0(comp, '_', lineage)
   gse = read.table(file = paste0(in.dir, comp, '/', title, '_gsea_C5_BP.txt'),
                    header = TRUE, sep = '\t')
+  gse = gse[complete.cases(gse),]
   
   plot.list[[title]] = plot_go_nice(gse = gse, terms = terms, title = title)
+  
+  if (nrow(gse[gse$padj < 0.05,]) > 0){
+    gse = gse[gse$padj < 0.05,]
+    gse = gse[order(gse$NES, decreasing= TRUE),]
+    terms = gse$pathway
+    all.plot.list[[title]] = plot_go_nice(gse = gse, terms = head(terms,30), title = title)
+  }
 }
 
 
@@ -171,8 +198,16 @@ for (comp in names(term.list)){
   # Read data
   gse = read.table(file = paste0(in.dir, comp, '/', comp, '_gsea_C5_BP.txt'),
                    header = TRUE, sep = '\t')
+  gse = gse[complete.cases(gse),]
   
   plot.list[[comp]] = plot_go_nice(gse = gse, terms = terms, title = comp)
+  
+  if (nrow(gse[gse$padj < 0.05,]) > 0){
+    gse = gse[gse$padj < 0.05,]
+    gse = gse[order(gse$NES, decreasing= TRUE),]
+    terms = gse$pathway
+    all.plot.list[[comp]] = plot_go_nice(gse = gse, terms = head(terms,30), title = comp)
+  }
 }
 
 
@@ -201,13 +236,27 @@ for (lineage in names(term.list)){
   title = paste0(comp, '_', lineage)
   gse = read.table(file = paste0(in.dir, comp, '/', title, '_gsea_C5_BP.txt'),
                    header = TRUE, sep = '\t')
+  gse = gse[complete.cases(gse),]
   
   plot.list[[title]] = plot_go_nice(gse = gse, terms = terms, title = title)
+  
+  if (nrow(gse[gse$padj < 0.05,]) > 0){
+    gse = gse[gse$padj < 0.05,]
+    gse = gse[order(gse$NES, decreasing= TRUE),]
+    terms = gse$pathway
+    all.plot.list[[title]] = plot_go_nice(gse = gse, terms = head(terms,30), title = title)
+  }
 }
 
 
-# Plot 
-pdf('~/sciebo/CovidEpiMap/geneset_enrichment/selected_GOs_all.pdf', height = 40)
+# Plot selected GOs
+outdir = '~/sciebo/CovidEpiMap/geneset_enrichment/'
+pdf(file = paste0(outdir, 'selected_GOs_all.pdf'), height = 40, width = 8)
 plot_grid(plotlist = plot.list, align = 'hv', ncol = 1)
+dev.off()
+
+# Plot all significant GOs
+pdf(file = paste0(outdir, 'significant_GOs_all.pdf'), height = 100, width = 25)
+plot_grid(plotlist = all.plot.list, align = 'hv', ncol = 1)
 dev.off()
 

@@ -452,8 +452,6 @@ plot_go_nice = function(gse, terms, title = NULL){
   # Format terms 
   terms.tmp = stringr::str_to_upper(terms)
   terms.tmp = gsub(' ', '_', terms.tmp)
-  #terms.tmp[!startsWith(terms.tmp, 'PID_')] = paste0('GO_', terms.tmp[!startsWith(terms.tmp, 'PID_')])
-  
   
   # Subset table
   gse = gse[gse$pathway %in% terms.tmp,]
