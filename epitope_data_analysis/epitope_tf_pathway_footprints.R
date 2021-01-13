@@ -12,6 +12,7 @@ library(viridis)
 library(tidyverse)
 library(pheatmap)
 library(tidyr)
+library(viper)
 source('sc_source/sc_source.R')
 indir = '~/sciebo/CovidEpiMap/integrated/'
 outdir = '~/sciebo/CovidEpiMap/epitope_analysis/severe_vs_mild/'
@@ -35,7 +36,8 @@ regulon = dorothea_regulon_human %>%
     list(tfmode = targets, likelihood = likelihood)
   })
 
-
+TF_activities_df = data.frame(tf = unique(dorothea_regulon_human$tf), 
+                              row.names = unique(dorothea_regulon_human$tf))
 cell.types = c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1')
 
 for (cell.type in cell.types){
@@ -58,6 +60,7 @@ for (cell.type in cell.types){
                              p.value = mrs$es$p.value, 
                              FDR = p.adjust(mrs$es$p.value, method = 'fdr'))
   TF_activities = TF_activities[order(TF_activities$FDR),]
+  TF_activities_df[[cell.type]] = TF_activities[rownames(TF_activities_df),'NES']
   
   # Write to file
   write.table(TF_activities, 
@@ -67,6 +70,9 @@ for (cell.type in cell.types){
               quote = FALSE)
 }
 
+pdf(file = paste0(outdir, 'A0101-2_binding_severe_vs_mild_tf_activity.pdf'), height = 5)
+plot_dorothea(df = TF_activities_df, case = 'severe', control = 'mild')
+dev.off()
 
 
 #---- Pathway activity inference with PROGENy
