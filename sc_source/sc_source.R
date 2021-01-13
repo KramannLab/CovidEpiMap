@@ -445,14 +445,14 @@ run_gsea = function(bg.genes, stats, category, plot.title = NULL, subcategory = 
 
 #---- Nice GO plot
 
-plot_go_nice = function(gse, terms){
+plot_go_nice = function(gse, terms, title = NULL){
   suppressPackageStartupMessages(library(ggplot2))
   suppressPackageStartupMessages(library(viridis))
   
   # Format terms 
   terms.tmp = stringr::str_to_upper(terms)
   terms.tmp = gsub(' ', '_', terms.tmp)
-  terms.tmp[!startsWith(terms.tmp, 'PID_')] = paste0('GO_', terms.tmp[!startsWith(terms.tmp, 'PID_')])
+  #terms.tmp[!startsWith(terms.tmp, 'PID_')] = paste0('GO_', terms.tmp[!startsWith(terms.tmp, 'PID_')])
   
   
   # Subset table
@@ -467,8 +467,11 @@ plot_go_nice = function(gse, terms){
     ggplot(aes(x = NES, y = pathway, color = padj, size = size)) +
     geom_point() +
     cowplot::theme_cowplot() + 
-    theme(axis.line  = element_blank(),
-          axis.ticks = element_blank()) +
+    theme(axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0, size = 4),
+          axis.text.x = element_text(size = 8),
+          axis.text.y = element_text(size = 8),
+          axis.title.x = element_text(size = 10)) +
     scale_colour_gradient2(low = viridis(2)[2], 
                            mid = 'lightgrey', 
                            high = viridis(2)[1], 
@@ -478,11 +481,12 @@ plot_go_nice = function(gse, terms){
                            name = 'pAdj') +
     labs(x = 'NES',
          y = '',
-         size = '') +
+         size = '',
+         title = title) +
     guides(size = 'none') +
-    scale_size(range = c(2,7),
+    scale_size(range = c(1,5),
                limits = c(1,3)) +
-    coord_fixed(xlim = c(-3, 3))
+    coord_fixed(xlim = c(-3.5, 3.5))
   return(p)
 }
 

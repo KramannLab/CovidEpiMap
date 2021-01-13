@@ -126,6 +126,7 @@ plot_cci(graph = data@graphs$EXP_x_CTR,
 dev.off()
 
 
+
 # Plot differential cell-cell ligand/receptor frequency table
 all_data = readRDS(file = paste0(outdir, 'LR_data_step2.Rds'))
 
@@ -151,25 +152,95 @@ plot_table = function(all_data = all_data){
     out_all$rank <- ifelse(out_all$Freq<0,0,1)
     p1 <- ggplot2::ggplot(in_all,ggplot2::aes(x=Freq,y=Var1,fill=Expression))+
       ggplot2::geom_bar(stat = 'identity',position = "identity", show.legend = FALSE)+
-      ggplot2::geom_text(ggplot2::aes(label=Freq),size=3.5)+
+      ggplot2::geom_text(ggplot2::aes(label=sub("-", "", Freq)),size=3.5)+
       ggplot2::scale_fill_manual(values=pals::coolwarm(2))+
       ggplot2::ggtitle('Ligands')+
       ggplot2::ylab('')+
       ggplot2::xlab('Number of interactions')+
-      ggplot2::theme_minimal()
+      cowplot::theme_cowplot() +
+      theme(axis.line  = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text.x = element_blank())
     p2 <- ggplot2::ggplot(out_all,ggplot2::aes(x=Freq,y=Var1,fill=Expression))+
       ggplot2::geom_bar(stat = 'identity',position = "identity")+
-      ggplot2::geom_text(ggplot2::aes(label=Freq),size=3.5)+
+      ggplot2::geom_text(ggplot2::aes(label=sub("-", "", Freq)),size=3.5)+
       ggplot2::scale_fill_manual(values=pals::coolwarm(2))+
       ggplot2::ggtitle('Receptors')+
       ggplot2::ylab('')+
       ggplot2::xlab('Number of interactions')+
-      ggplot2::theme_minimal()
+      cowplot::theme_cowplot() +
+      theme(axis.line  = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text.x = element_blank())
     return(p1+p2)
 }
 
 
-pdf(file = paste0(outdir, 'differential_cci_frequency_table.pdf'), width = 11)
+pdf(file = paste0(outdir, 'differential_cci_frequency_table.pdf'), width = 13)
 plot_table(all_data)
 dev.off()
+
+
+
+# Plot differential gene cell ranking (sending/receiving)
+# Plotting script from CrossTalkeR (modified)
+plot_rank = function(all_data){
+  curr <- "EXP_x_CTR"
+  curr_net <- all_data@graphs_ggi[[curr]]
+  up_graph <- igraph::subgraph.edges(curr_net, E(curr_net)[E(curr_net)$MeanLR > 0])
+  down_graph <- igraph::subgraph.edges(curr_net, E(curr_net)[E(curr_net)$MeanLR < 0])
+  in_deg_up <- igraph::degree(up_graph, mode = 'in')
+  in_deg_down <- igraph::degree(down_graph, mode = 'in')
+  in_up <- tibble::tibble(genes = paste0(names(in_deg_up),'_up'), values=as.array(in_deg_up))
+  in_down <- tibble::tibble(genes = paste0(names(in_deg_down),'_down'), values=as.array(in_deg_down))
+  in_deg_data_up <-dplyr::top_n(in_up, 10, values)
+  in_deg_data_down <- dplyr::top_n(in_down, 10, values)
+  in_deg_data_down$values <- 0 -in_deg_data_down$values
+  in_deg_data <- dplyr::bind_rows(in_deg_data_up,in_deg_data_down )
+  in_deg_data$Expression <- ifelse(in_deg_data$values <0,'Downregulated','Upregulated')
+  p1 <- ggplot2::ggplot(in_deg_data,ggplot2::aes(x=values,y=reorder(genes,values),fill=Expression))+
+    ggplot2::geom_bar(stat = 'identity',position = "identity")+
+    ggplot2::scale_fill_manual(values=pals::coolwarm(2))+
+    ggplot2::geom_text(ggplot2::aes(label=sub("-", "",values)),size=3.5)+
+    ggplot2::ggtitle('Receiving')+
+    ggplot2::ylab('')+
+    ggplot2::xlab('Number of interactions')+
+    cowplot::theme_cowplot() +
+    theme(axis.line  = element_blank(),
+          axis.ticks = element_blank(),
+          axis.text.x = element_blank())
+  out_deg_up <- igraph::degree(up_graph, mode = 'out')
+  out_deg_down <- igraph::degree(down_graph, mode = 'out')
+  out_up <- tibble::tibble(genes = paste0(names(out_deg_up),'_up'), values=as.array(out_deg_up))
+  out_down <- tibble::tibble(genes = paste0(names(out_deg_down),'_down'), values=as.array(out_deg_down))
+  out_deg_data_up <-dplyr::top_n(out_up, 10, values)
+  out_deg_data_down <- dplyr::top_n(out_down, 10, values)
+  out_deg_data_down$values <- 0-out_deg_data_down$values
+  out_deg_data <- dplyr::bind_rows(out_deg_data_up,out_deg_data_down )
+  out_deg_data$Expression <- ifelse(out_deg_data$values <0,'Downregulated','Upregulated')
+  p2 <- ggplot2::ggplot(out_deg_data,ggplot2::aes(x=values,y=reorder(genes,values),fill=Expression))+
+    ggplot2::geom_bar(stat = 'identity',position = "identity", show.legend = FALSE)+
+    ggplot2::scale_fill_manual(values=pals::coolwarm(2))+
+    ggplot2::geom_text(ggplot2::aes(label=sub("-", "",values)),size=3.5)+
+    ggplot2::ggtitle('Sending')+
+    ggplot2::ylab('')+
+    ggplot2::xlab('Number of interactions')+
+    cowplot::theme_cowplot() +
+    theme(axis.line  = element_blank(),
+          axis.ticks = element_blank(),
+          axis.text.x = element_blank())
+  return(p2+p1)
+}
+
+
+pdf(file = paste0(outdir, 'differential_gene_cell_ranking.pdf'), width = 14)
+plot_rank(all_data)
+dev.off()
+
+
+
+
+
+
+
 
