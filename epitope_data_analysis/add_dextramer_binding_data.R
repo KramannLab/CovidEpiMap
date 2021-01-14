@@ -20,7 +20,7 @@ Idents(sc) = 'integrated_annotations'
 
 
 # Add clonotype size
-sc$patient_clonotype = paste0(sc$patient, '_', sc$TCR_clonotype_id)
+sc$patient_clonotype = str_c(sc$patient, '_', sc$TCR_clonotype_id)
 
 df = sc@meta.data %>% 
 	group_by(patient_clonotype) %>% 
