@@ -526,7 +526,8 @@ get_violin = function(object, features.use){
     
     ps = lapply(p, function(x) x + coord_flip() + NoLegend() +
                      theme_bw() +
-                     theme(plot.title = element_text(angle = 90), legend.position = 'none',
+                     theme(plot.title = element_text(angle = 90, size = 8, vjust = 0.5), 
+                           legend.position = 'none',
                            axis.title.x = element_blank(),
                            axis.text.x = element_blank(),
                            axis.ticks.x = element_blank(),
@@ -620,15 +621,20 @@ plot_dge_nice = function(dge.table, genes){
   p = gene.table %>%
     ggplot(aes(x = cluster, y = gene, color = avg_log2FC, size = log10_padj_edit)) +
     geom_point() +
-    scale_color_viridis_c(name = 'Log2FC') + 
-    cowplot::theme_cowplot() + 
-    theme(axis.line  = element_blank(),
-          axis.text.x = element_text(angle = 90, hjust = 1, size = 8),
+    scale_colour_gradient2(low = viridis(2)[1], 
+                           mid = '#F0F0F0', 
+                           high = viridis(2)[2], 
+                           midpoint = 0, 
+                           limits = c(-2,2), 
+                           oob = scales::squish) +
+    cowplot::theme_cowplot() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 8),
           axis.text.y = element_text(size = 8),
           axis.ticks = element_blank()) +
     labs(x = '',
          y = '',
-         size = '-log10(pAdj)')
+         size = bquote(~-log[10]~'(pAdj)'),
+         color = bquote(~log[2]~'(FC)'))
   
   return(p)
 }

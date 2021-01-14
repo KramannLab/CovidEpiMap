@@ -9,7 +9,7 @@ source('sc_source/sc_source.R')
 indir = '~/sciebo/CovidEpiMap/diff_expression/diff_genes/'
 
 # Genes to plot
-genes = read.table(file = paste0(indir, 'relevant_genes_final_plot_DEG.txt'), header = TRUE)
+genes = read.table(file = paste0(indir, 'analysis_diff_genes/relevant_genes_final_plot_DEG.txt'), header = TRUE)
 genes = genes$gene
 
 # Get DGEA results
@@ -21,7 +21,7 @@ cell.types = sub(pattern, '', de.files)
 cell.types = sub('integrated.diff.genes.', '', cell.types)
 names(dge.table) = cell.types
 
-pdf(file = paste0(indir, 'active_severe_vs_active_mild_relevant_DEG_final_plot.pdf'), height = 11, width = 5)
+pdf(file = paste0(indir, '../active_severe_vs_active_mild_relevant_DEG_final_plot.pdf'), height = 11, width = 5)
 plot_dge_nice(dge.table = dge.table, genes = genes)
 dev.off()
 

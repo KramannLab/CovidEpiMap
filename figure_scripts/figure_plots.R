@@ -8,6 +8,7 @@ library(Seurat)
 library(ggplot2)
 library(cowplot)
 library(dplyr)
+library(genesorteR)
 library(viridis)
 source('sc_source/sc_source.R')
 
@@ -17,42 +18,16 @@ sc = readRDS(file = paste0(indir, 'integrated.RNA.Tcells.annotated.rds'))
 DefaultAssay(sc) = 'RNA'
 Idents(sc) = 'integrated_annotations'
 
-markers = c(
-  'CD8+ naive T cells' = c('CD3', 'CD8A', 'CD8B', 'CD45RA', 'CCR7', 
-                          'CD197', 'SELL', 'ACTN1', 'CD27', 'IL7R', 
-                          'CD127', 'TCF7', 'CD28'),
-  'CD8+ central memory T cells' = c('CD3', 'CD8A', 'CD8B', 'CD45R0', 'CCR7', 
-                                    'CD197', 'SELL', 'CD27', 'IL7R', 'CD127', 
-                                    'TCF7', 'CD28'),
-  'CD8+ CD73+ regulatory T cells' = c('CD3', 'CD8A', 'CD8B', 'CCR7', 'CD27', 
-                                      'IL7R', 'CD127', 'TCF7', 'NT5E', 'CCR9'),
-  'CD8+ TEMRA cells' = c('CD3', 'CD8A', 'CD8B', 'CD45RA', 'GZMB', 
-                        'GZMH', 'GNLY', 'FCGR3A', 'FGFBP2','CX3CR1', 'HLA-DR'),
-  'CD8+ NK-like TEMRA cells' = c('CD3', 'CD8A', 'CD8B', 'CD45RA', 'CX3CR1', 
-                                'KLRC2', 'KLRF1', 'KIR2DL3', 'KIR3DL2', 'KIR3DL1', 
-                                'NCR1', 'CD160'),
-  'CD8+ effector memory T cells 1' = c('CD3', 'CD8A', 'CD8B', 'CD45R0', 'CD27', 
-                                      'CD28', 'SELL', 'HLA-DR'),
-  'CD8+ effector memory T cells 2' = c('CD3', 'CD8A', 'CD8B', 'CD45R0', 'CD27', 
-                                      'CD28', 'SELL', 'HLA-DR', 'CD38', 'CX3CR1', 'FGFBP2'),
-  'CD8+ cycling effector T cells' = c('CD3', 'CD8A', 'CD8B', 'SELL', 'CD27', 
-                                      'CX3CR1', 'HLA-DR', 'MKI67', 'PCNA', 'MCM2'),
-  'CD8+ NK-like early effector T cells' = c('CD3', 'CD8A', 'CD8B', 'SELL', 'ACTN1', 
-                                            'CD27', 'IL7R', 'CD127', 'TCF7', 'ZNF683', 
-                                            'LEF1', 'KLRC2', 'NCR3'),
-  'Atypical NKT cells' = c('CD3', 'CD8A', 'CD8B', 'NKG7', 'KLRB1', 
-                          'CD161', 'TRAV12-3', 'TRBV7-8', 'TRBV6-5'),
-  'CD8+ exhausted T cells' = c('CD3', 'CD8A', 'CD8B', 'CD45RA', 'SELL', 
-                              'CD27', 'CD28', 'HLA-DR', 'CD38', 'CTLA4', 
-                              'TIGIT', 'CD279', 'HAVCR2', 'PRDM1', 'IL10', 'CXCR6'),
-  'MAIT cells' = 'TRAV1-2',
-  'Gamma Delta T cells' = 'TRDC')
+# Genes to plot
+genes = read.table(file = paste0(indir, 'marker_expression/selected_cell_type_markers.txt'), header = TRUE)
+genes = genes$gene
 
-pdf(file = paste0(indir, 'cell_type_markers.pdf'), width = 14, height = 6)
-get_violin(object = sc, features.use = unique(markers))
+p = get_violin(object = sc, features.use = genes)
+pdf(file = paste0(indir, 'cell_type_markers.pdf'), width = 8, height = 4)
+p
 dev.off()
 
-
+get_violin(object = sc, features.use = genes[1:3])
 
 #---- Bar charts with cell type distribution
 
@@ -273,3 +248,75 @@ for (marker in markers){
 }
 dev.off()
 
+
+
+#---- Heatmap of ADT library expression
+
+DefaultAssay(sc) = 'ADT'
+markers = rownames(sc)[24:35]
+
+pdf(file = paste0(indir, 'integrated_Tcells_ADT_selected_expression.pdf'), height = 5.5, width = 8)
+DoHeatmap(subset(sc, downsample = 500), 
+          features = markers, 
+          assay = 'ADT', 
+          raster = FALSE, 
+          group.colors = cell.type.colors,
+          group.bar.height = 0.03, 
+          label = FALSE) +
+  scale_fill_gradient2(low = viridis(2)[1], 
+                       mid = '#F0F0F0', 
+                       high = viridis(2)[2], 
+                       limits = c(-1,1), 
+                       oob = scales::squish)
+dev.off()
+
+
+
+#---- KLRG1 and IL7R expression 
+
+DefaultAssay(sc) = 'RNA'
+genes = c('KLRG1', 'IL7R')
+for (gene in genes){
+  pdf(file = paste0(indir, 'integrated_Tcells_', gene, '.pdf'), height = 5, width = 5)
+  print(VlnPlot(sc, feature = gene, 
+          pt.size = 0, 
+          group.by = 'integrated_annotations', 
+          slot = 'scale.data',
+          cols = cell.type.colors,
+          sort = TRUE) +
+    NoLegend() +
+    theme(axis.title.x = element_blank(),
+          axis.ticks = element_blank(),
+          axis.text.x = element_text(angle = 90)) +
+    ylab(paste0(gene, ' expression')) +
+    ggtitle(''))
+  dev.off()
+}
+
+
+
+#---- Top5 specificity score (genesorteR) per cluster
+
+sg = run_genesorter(sc, write.file = FALSE)
+sg = sg$specScore
+genes = list()
+n = 5
+for (i in 1:ncol(sg)){
+  genes[[i]] = rownames(head(sg[order(sg[,i], decreasing = TRUE),], n))
+}
+top.genes = unique(unlist(genes))
+
+
+pdf(file = paste0(indir, 'integrated_Tcells_genesorter_top5.pdf'), height = 12, width = 5.5)
+DotPlot(sc, 
+        features = rev(top.genes), 
+        assay = 'RNA') + 
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 90, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks = element_blank()) +
+scale_colour_gradient2(low = viridis(2)[1], mid = '#F5F5F5', high = viridis(2)[2], 
+                       midpoint = 0, limits = c(-2,2), oob = scales::squish)
+dev.off()
