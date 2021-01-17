@@ -6,6 +6,7 @@
 
 library(Seurat)
 library(dplyr)
+library(stringr)
 indir = '~/sciebo/CovidEpiMap/integrated/'
 datdir = '~/sciebo/CovidEpiMap/tcr/'
 outdir = '~/sciebo/CovidEpiMap/epitope_analysis/updated/'
@@ -20,7 +21,7 @@ Idents(sc) = 'integrated_annotations'
 
 
 # Add clonotype size
-sc$patient_clonotype = paste0(sc$patient, '_', sc$TCR_clonotype_id)
+sc$patient_clonotype = str_c(as.character(sc$patient), '_', sc$TCR_clonotype_id)
 
 df = sc@meta.data %>% 
 	group_by(patient_clonotype) %>% 

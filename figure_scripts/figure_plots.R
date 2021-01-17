@@ -239,12 +239,18 @@ subset = subset(sc, condition %in% c('active_severe', 'active_mild'))
 subset$condition = droplevels(subset$condition)
 
 markers = c('CLEC2B', 'KLRF1')
-pdf(file = paste0(indir, 'integrated_Tcells_CLEC2B_KLRF1.pdf'))
+pdf(file = paste0(indir, 'integrated_Tcells_CLEC2B_KLRF1.pdf'), height = 5)
 for (marker in markers){
-  print(VlnPlot(subset, feature = marker, split.by = 'condition', 
-        pt.size = 0, split = TRUE, cols = viridis(2)) + 
-          coord_flip() +
-          xlab(''))
+  print(VlnPlot(subset, 
+                feature = marker, 
+                split.by = 'condition',
+                pt.size = 0, 
+                split = TRUE, 
+                cols = viridis(2),
+                slot = 'scale.data') +
+          xlab('') +
+          theme(axis.ticks = element_blank(),
+                axis.text.x = element_text(angle = 90)))
 }
 dev.off()
 

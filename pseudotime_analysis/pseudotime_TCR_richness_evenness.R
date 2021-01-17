@@ -5,7 +5,6 @@
 #---- TCR richness and evenness across pseudotime 
 
 library(Seurat)
-library(slingshot)
 library(viridis)
 library(tidyverse)
 library(cowplot)
@@ -16,10 +15,6 @@ outdir = '~/sciebo/CovidEpiMap/trajectory_analysis/'
 
 # Get pseudotimes per lineage
 sc.subset = readRDS(file = paste0(indir, 'integrated.RNA.Tcells.pseudotime.subset.rds'))
-sds = sc.subset@tools$slingshot
-pseudotime = slingPseudotime(sds)
-sc.subset$slingshot_pseudotime_curve1 = pseudotime[,1]
-sc.subset$slingshot_pseudotime_curve2 = pseudotime[,2]
 
 
 # Cut pseudotimes into bins
@@ -59,6 +54,7 @@ for (curve in curves){
     for (condition in conditions){
       # Subset to condition and pseudotime cut
       subset = df[df$condition_collapsed %in% condition,]
+      # Filter out NA clonotypes
       subset = subset %>% 
         filter(!is.na(TCR_clonotype_id),
                !!sym(curve) == cut)
@@ -88,7 +84,6 @@ data = as.data.frame(do.call(rbind, data))
 colnames(data) = c('curve', 'cut', 'evenness', 'richness', 'condition')
 data$evenness = as.numeric(data$evenness)
 data$richness = as.numeric(data$richness)
-levels(data$curve) 
 
 # Get min and max from cut interval
 data = data %>% 

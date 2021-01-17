@@ -256,27 +256,53 @@ plot_top_genes(gene.set = genes.1, model = sce, n = 100,
 plot_top_genes(gene.set = genes.2, model = sce, n = 100, 
 				out.dir = outdir, file.name = paste0(file.prefix.2, '_top_genes'))
 
-# Heatmap
-# Lineage 1
-smooth = predictSmooth(sce, gene = genes.1, nPoints = 100, tidy = FALSE)
 
-pdf(file = paste0(outdir, file.prefix.1, '_DEG_heatmap.pdf'), width = 6)
-plot_heatmaps(smooth.res = smooth, 
-			cond1.start = 201, cond1.end = 300, 
-			cond2.start = 1, cond2.end = 100,
-			main1 = 'Active severe (lineage 1)',
-			main2 = 'Active mild (lineage 1)')
-dev.off()
+# Heatmap of top genes 
+# l1, am : 1:25, l2, am: 26:50, l1, as: 51:75, l2, as: 76:100
+genes = unique(genes.1, genes.2)
+smooth = predictSmooth(sce, gene = genes, nPoints = 25, tidy = FALSE)
+smooth = smooth[,c(76:100,26:50,51:75,1:25)]
 
-# Lineage 2
-smooth = predictSmooth(sce, gene = genes.2, nPoints = 100, tidy = FALSE)
+# Annotations for columns
+col.data = data.frame(data = colnames(smooth))
+col.data$lineage = c(rep('lineage 2', 50), rep('lineage 1', 50))
+col.data$condition = c(rep(c(rep('active severe', 25), rep('active mild', 25)),2))
+rownames(col.data) = col.data$data
+col.data$data = NULL
 
-pdf(file = paste0(outdir, file.prefix.2, '_DEG_heatmap.pdf'), width = 6)
-plot_heatmaps(smooth.res = smooth, 
-			cond1.start = 301, cond1.end = 400, 
-			cond2.start = 101, cond2.end = 200,
-			main1 = 'Active severe (lineage 2)',
-			main2 = 'Active mild (lineage 2)')
+# Annotation colours
+
+annotation.colors = list(lineage = c('lineage 1' = viridis(20)[10],
+                                     'lineage 2' = viridis(20)[17]),
+                         condition = c('active mild' = viridis(20)[6],
+                                       'active severe' = viridis(20)[20]))
+
+# Define colour palette
+paletteLength = 100
+myColor = colorRampPalette(c(viridis(paletteLength)[1], 
+                             'white', 
+                             viridis(paletteLength)[paletteLength]))(paletteLength)
+
+smooth = scale(t(smooth))
+myBreaks = c(seq(min(smooth), 0, 
+                    length.out = ceiling(paletteLength/2) + 1),
+                seq(max(smooth)/paletteLength, 
+                    max(smooth), 
+                    length.out = floor(paletteLength/2)))
+
+pdf(file = paste0(outdir, 'condition_test_DEG_heatmap.pdf'), width = 5, height = 5.5)
+pheatmap(t(smooth),
+         cluster_cols = FALSE,
+         show_rownames = TRUE, 
+         show_colnames = FALSE,
+         breaks = myBreaks,
+         fontsize_row = 3,
+         fontsize_col = 2,
+         treeheight_row = 0,
+         annotation_col = col.data[c('condition', 'lineage')],
+         color = myColor,
+         annotation_colors = annotation.colors,
+         border = NA)
 dev.off()
 
 

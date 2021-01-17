@@ -342,41 +342,6 @@ plot_dorothea = function(df, case, control){
 
 
 
-#---- Side-by-side heatmaps of tradeSeq results from two conditions
-
-plot_heatmaps = function(smooth.res, cond1.start, cond1.end, cond2.start, cond2.end, main1, main2){
-  suppressPackageStartupMessages(library(pheatmap))
-  suppressPackageStartupMessages(library(gridExtra))
-
-  smooth.scaled = t(scale(t(smooth.res)))
-  
-  heat.smooth = pheatmap(smooth.scaled[, cond1.start:cond1.end],
-          cluster_cols = FALSE,
-          show_rownames = FALSE, 
-          show_colnames = FALSE, 
-          main = main1, 
-          legend = FALSE,
-          silent = TRUE,
-          fontsize = 6)
-
-  matching.heat = pheatmap(smooth.scaled[heat.smooth$tree_row$order, cond2.start:cond2.end],
-            cluster_cols = FALSE, 
-            cluster_rows = FALSE,
-            show_rownames = TRUE, 
-            show_colnames = FALSE, 
-            main = main2,
-            legend = FALSE, 
-            silent = TRUE,
-            fontsize_row = 2.5,
-            fontsize = 6)
-
-  p = grid.arrange(heat.smooth[[4]], matching.heat[[4]], ncol = 2)
-  return(p)
-}
-
-
-
-
 #---- Plot GO terms from GSEA
 
 plot_go = function(gsea.res, gsea.res.order, plot.title = NULL, n = 20){
@@ -616,6 +581,7 @@ plot_dge_nice = function(dge.table, genes){
   gene.table = do.call(rbind, gene.list)
   gene.table$log10_padj_edit = gene.table$log10_padj
   gene.table[gene.table$log10_padj > 15,'log10_padj_edit'] = 15
+  gene.table$gene = factor(gene.table$gene, levels = rev(genes))
   
   # Plot
   p = gene.table %>%
@@ -638,4 +604,46 @@ plot_dge_nice = function(dge.table, genes){
   
   return(p)
 }
+
+
+
+
+#---- Discrete colour gradient function 
+
+# Source 
+# https://stackoverflow.com/a/62556763
+discrete_gradient_pal = function(colours, bins = 5) {
+  ramp = scales::colour_ramp(colours)
+  function(x) {
+    if (length(x) == 0) return(character())
+    i = floor(x * bins)
+    i =  ifelse(i > bins-1, bins-1, i)
+    ramp(i/(bins-1))
+  }
+}
+
+
+
+
+#---- Scale fill discrete function 
+
+# Source 
+# https://stackoverflow.com/a/62556763
+scale_fill_discrete_gradient = 
+  function(..., colours, bins = 5, 
+           na.value = 'grey50', 
+           guide = 'colourbar', 
+           aesthetics = 'fill', colors)  {
+    colours <- if (missing(colours)) 
+      colors
+    else colours
+    continuous_scale(
+      aesthetics,
+      'discrete_gradient',
+      discrete_gradient_pal(colours, bins),
+      na.value = na.value,
+      guide = guide,
+      ...
+    )
+  }
 
