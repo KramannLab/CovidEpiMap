@@ -625,6 +625,16 @@ discrete_gradient_pal = function(colours, bins = 5) {
 
 
 
+#---- # Get upper triangle of matrix
+
+get_upper_triangle = function(cormat, diag = FALSE){
+  cormat[lower.tri(cormat, !diag)] =  NA
+  return(cormat)
+}
+
+
+
+
 #---- Scale fill discrete function 
 
 # Source 
@@ -646,4 +656,32 @@ scale_fill_discrete_gradient =
       ...
     )
   }
+
+
+
+#---- Plot upper triangular matrix as a tile plot
+
+upper_trig_tile_plot = function(matrix, text_size = 2){
+  suppressPackageStartupMessages(library(ggplot2))
+  suppressPackageStartupMessages(library(cowplot))
+  suppressPackageStartupMessages(library(viridis))
+  colours = viridis(7)
+  
+  p = ggplot(coef_matrix, aes(x = Var1, y = Var2, fill = value)) +
+    geom_tile() + 
+    geom_text(aes(label = round(value, digits = 2)), size = text_size) +
+    scale_fill_gradient2(high = colours[7], 
+                         mid = colours[4], 
+                         midpoint = ((range(na.omit(coef_matrix$value)))/2)[2], 
+                         low = colours[1], 
+                         na.value = 'white') +
+    theme_cowplot() + 
+    theme(text = element_text(size = 8),
+          axis.title = element_blank(),
+          axis.ticks = element_blank(),
+          axis.text.y = element_text(size = 8), 
+          axis.text.x = element_text(size = 8, angle = 90, vjust = 1, hjust = 1))
+  
+  return(p)
+}
 

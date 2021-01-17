@@ -8,6 +8,7 @@ library(Seurat)
 library(rlist)
 library(dplyr)
 library(ggplot2)
+library(viridis)
 library(harmony)
 options(future.globals.maxSize = 30720*1024^2)
 outdir = '~/sciebo/CovidEpiMap/integrated/'
@@ -200,12 +201,55 @@ dev.off()
 sc.subset = CellCycleScoring(sc.subset, s.features = cc.genes$s.genes, 
 							g2m.features = cc.genes$g2m.genes)
 
-pdf(file = paste0(outdir, 'integrated_Tcells_cell_cycle_score.pdf'), width = 12)
-FeaturePlot(sc.subset, features = c('S.Score', 'G2M.Score'))
-VlnPlot(sc.subset, features = 'S.Score', pt.size = 0, split.by = 'condition', sort = TRUE)
-VlnPlot(sc.subset, features = 'G2M.Score', pt.size = 0, split.by = 'condition', sort = TRUE)
-VlnPlot(sc.subset, features = 'S.Score', pt.size = 0, split.by = 'condition_condensed', sort = TRUE)
-VlnPlot(sc.subset, features = 'G2M.Score', pt.size = 0, split.by = 'condition_condensed', sort = TRUE)
+pdf(file = paste0(outdir, 'integrated_Tcells_cell_cycle_score.pdf'), width = 12, height = 4)
+VlnPlot(sc.subset, features = 'S.Score', 
+        pt.size = 0, 
+        split.by = 'condition', 
+        cols = viridis(5)) +
+  theme(text = element_text(size = 8),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(size = 8, angle = 90),
+        axis.text.y = element_text(size = 8),
+        axis.title.x = element_blank()) +
+  labs(y = 'S cell cycle score',
+       fill = 'Condition') +
+  ggtitle('')
+VlnPlot(sc.subset, features = 'G2M.Score', 
+        pt.size = 0, 
+        split.by = 'condition', 
+        cols = viridis(5)) +
+  theme(text = element_text(size = 8),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(size = 8, angle = 90),
+        axis.text.y = element_text(size = 8),
+        axis.title.x = element_blank()) +
+  labs(y = 'G2M cell cycle score',
+       fill = 'Condition') +
+  ggtitle('')
+VlnPlot(sc.subset, features = 'S.Score', 
+        pt.size = 0, 
+        split.by = 'condition_collapsed', 
+        cols = viridis(3)) +
+  theme(text = element_text(size = 8),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(size = 8, angle = 90),
+        axis.text.y = element_text(size = 8),
+        axis.title.x = element_blank()) +
+  labs(y = 'S cell cycle score',
+       fill = 'Condition') +
+  ggtitle('')
+VlnPlot(sc.subset, features = 'G2M.Score', 
+        pt.size = 0, 
+        split.by = 'condition_collapsed', 
+        cols = viridis(3)) +
+  theme(text = element_text(size = 8),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(size = 8, angle = 90),
+        axis.text.y = element_text(size = 8),
+        axis.title.x = element_blank()) +
+  labs(y = 'G2M cell cycle score',
+       fill = 'Condition') +
+  ggtitle('')
 dev.off()
 
 

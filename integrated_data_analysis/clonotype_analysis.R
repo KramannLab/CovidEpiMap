@@ -113,42 +113,11 @@ dev.off()
 
 # Compute morisita overlap index of clonotypes with vegan package
 dm = 1 - as.matrix(vegdist(table(sc$integrated_annotations, sc$Clonotype), method = 'horn'))
-
-# Get upper triangle of overlap for plotting
-get_upper_triangle = function(cormat, diag = FALSE){
-  cormat[lower.tri(cormat, !diag)] =  NA
-  return(cormat)
-}
-coef_matrix = melt(get_upper_triange(dm, diag = FALSE), na.rm = TRUE)
-colours = viridis(7)
+coef_matrix = melt(get_upper_triangle(dm, diag = FALSE), na.rm = TRUE)
 
 # Plot
 pdf(file = paste0(outdir, 'morisita_overlap_index.pdf'), height = 5, width = 6)
-ggplot(coef_matrix, aes(x = Var1, y = Var2, fill = value)) +
-  geom_tile() + 
-  geom_text(aes(label = round(value, digits = 3)), size = 2) +
-  scale_fill_gradient2(high = colours[7], 
-                       mid = colours[4], 
-                       midpoint = ((range(na.omit(coef_matrix$value)))/2)[2], 
-                       low = col[1], 
-                       na.value = 'white') +
-  theme_cowplot() + 
-  theme(text = element_text(size = 8),
-        axis.title = element_blank(),
-        axis.ticks = element_blank(),
-        axis.text.y = element_text(size = 8), 
-        axis.text.x = element_text(size = 8, angle = 90, vjust = 1, hjust = 1)) +
-  labs(fill = 'Morisita overlap index')
+upper_trig_tile_plot(coef_matrix) +
+  labs(fill = 'Morisita Horn similarity index')
 dev.off()
-
-
-
-
-
-
-
-
-
-
-
 
