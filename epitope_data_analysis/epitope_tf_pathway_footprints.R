@@ -70,9 +70,41 @@ for (cell.type in cell.types){
               quote = FALSE)
 }
 
-pdf(file = paste0(outdir, 'A0101-2_binding_severe_vs_mild_tf_activity.pdf'), height = 5)
-plot_dorothea(df = TF_activities_df, case = 'severe', control = 'mild')
+
+# Format data for plotting
+df = TF_activities_df
+df$tf = NULL
+df = apply(df, 2, as.numeric)
+rownames(df) = rownames(TF_activities_df)
+df.plot = df[complete.cases(df),]
+
+
+# Define colour palette
+paletteLength = 100
+myColor = colorRampPalette(c(viridis(paletteLength)[1], 
+                             'white', 
+                             viridis(paletteLength)[paletteLength]))(paletteLength)
+viperBreaks = c(seq(min(df.plot), 0, 
+                    length.out = ceiling(paletteLength/2) + 1),
+                seq(max(df.plot)/paletteLength, 
+                    max(df.plot), 
+                    length.out = floor(paletteLength/2)))
+
+pdf(file = paste0(outdir,'A0101-2_binding_severe_mild_tf_activity.pdf'), width = 1.5, height = 6)
+pheatmap(df.plot,
+         fontsize_col = 7, 
+         fontsize_row = 5.5,
+         color = myColor, 
+         breaks = viperBreaks, 
+         main = '',
+         angle_col = 90,
+         cluster_cols = TRUE,
+         cluster_rows = TRUE,
+         treeheight_row = 0, 
+         treeheight_col = 0, 
+         border = NA)
 dev.off()
+
 
 
 #---- Pathway activity inference with PROGENy
@@ -198,7 +230,4 @@ write.table(test.stats$stats, file = paste0(outdir, file.prefix, '.txt'),
 pdf(file = paste0(outdir, file.prefix, '.pdf'))
 test.stats$p
 dev.off()
-
-
-
 

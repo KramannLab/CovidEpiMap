@@ -123,3 +123,4 @@ pheatmap(df.plot[tf_ordered_all,celltype_ordered],
          labels_row = ifelse(tf_ordered_all %in% sig.regulons, tf_ordered_all, ''))
 dev.off()
 
+
