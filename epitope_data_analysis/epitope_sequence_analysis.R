@@ -66,7 +66,9 @@ for (i in 1:length(dex.fasta)){
   names(sequences) = gsub("\\s*\\[[^\\)]+\\]","", names(sequences))
   
   # Multiple alignment with Clustal Omega
-  alignment = msaClustalOmega(inputSeqs = sequences, type = 'protein', order = 'input')
+  alignment = msaClustalOmega(inputSeqs = sequences, 
+                              type = 'protein', 
+                              order = 'input')
   
   
   # Output alignments and consensus to pdf
