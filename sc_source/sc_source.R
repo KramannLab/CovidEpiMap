@@ -635,30 +635,6 @@ get_upper_triangle = function(cormat, diag = FALSE){
 
 
 
-#---- Scale fill discrete function 
-
-# Source 
-# https://stackoverflow.com/a/62556763
-scale_fill_discrete_gradient = 
-  function(..., colours, bins = 5, 
-           na.value = 'grey50', 
-           guide = 'colourbar', 
-           aesthetics = 'fill', colors)  {
-    colours <- if (missing(colours)) 
-      colors
-    else colours
-    continuous_scale(
-      aesthetics,
-      'discrete_gradient',
-      discrete_gradient_pal(colours, bins),
-      na.value = na.value,
-      guide = guide,
-      ...
-    )
-  }
-
-
-
 #---- Plot upper triangular matrix as a tile plot
 
 upper_trig_tile_plot = function(matrix, text_size = 2){

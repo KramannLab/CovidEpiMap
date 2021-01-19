@@ -8,6 +8,7 @@ library(msa)
 library(seqinr)
 library(viridis)
 library(reshape2)
+source('sc_source/sc_source.R')
 outdir = '~/sciebo/CovidEpiMap/epitope_sequence_analysis/'
 
 # Read dextramer names and sequences
@@ -83,16 +84,16 @@ for (i in 1:length(dex.fasta)){
                                  '\\showruler{1}{top}'))
   
   
-  # Compute similarity (1 - distance) based on alignment results (Fitch matrix)
+  # Compute similarity (1 - distance) based on alignment results
   alignment.res = msaConvert(alignment, type = 'seqinr::alignment')
-  sim.mat = 1 - dist.alignment(alignment.res, 'similarity')
+  sim.mat = 1 - dist.alignment(alignment.res, 'identity')
   sim.mat = as.matrix(sim.mat)
   coef_matrix = melt(get_upper_triangle(sim.mat, diag = FALSE), na.rm = TRUE)
   
   # Plot similarity
   pdf(file = paste0(outdir, 'dextramer_similarity/', dex.names[i], '_similarity.pdf'))
   print(upper_trig_tile_plot(coef_matrix, text_size = 3.5) +
-    labs(fill = 'Protein similarity'))
+    labs(fill = 'Similarity'))
   dev.off()
 }
 

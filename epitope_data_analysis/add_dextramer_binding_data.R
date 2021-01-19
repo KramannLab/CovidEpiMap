@@ -7,9 +7,13 @@
 library(Seurat)
 library(dplyr)
 library(stringr)
+library(ggplot2)
+library(cowplot)
+library(viridis)
+library(tidytext)
 indir = '~/sciebo/CovidEpiMap/integrated/'
 datdir = '~/sciebo/CovidEpiMap/tcr/'
-outdir = '~/sciebo/CovidEpiMap/epitope_analysis/updated/'
+outdir = '~/sciebo/CovidEpiMap/epitope_analysis/'
 '%ni%' = Negate('%in%')
 source('sc_source/sc_source.R')
 
@@ -238,4 +242,49 @@ for (i in 1:length(dextramers_select)){
 				row.names = FALSE,
 				quote = FALSE)
 }
+
+
+
+#---- Bar chart of unique dextramer binding counts
+
+indir = '~/sciebo/CovidEpiMap/epitope_analysis/binding_counts_unique/'
+
+# Make dextramer unique binding counts data frame
+cell.types = names(cell.type.colors)
+cell.types = cell.types[cell.types %ni% c('Gamma Delta T cells', 'MAIT cells', 'Atypical NKT cells')]
+dextramers = c('A0101_2', 'A0201_4', 'A0201_6')
+counts = data.frame(cell.type = rep(cell.types, 3), 
+                    condition = rep(c('healthy', 'mild', 'severe'), each = length(cell.types)))
+
+
+# Add counts from dextramers with unique binding
+counts = data.frame()
+for (dextramer in dextramers){
+  file.prefix = paste0(dextramer, '.unique.binding.count.condition.collapsed.cell.type.txt')
+  data = read.table(file = paste0(indir, file.prefix), header = TRUE, sep = '\t')
+  data$dextramer = colnames(data)[ncol(data)]
+  colnames(data)= c('condition', 'cell.type', 'count', 'dextramer')
+  counts = rbind(counts, data)
+}
+counts = counts[counts$cell.type %in% cell.types,]
+counts$condition = factor(counts$condition, levels = c('healthy', 'mild', 'severe'))
+
+# Plot
+pdf(file = paste0(indir, 'unique_binding_counts.pdf'), width = 7, height = 4)
+ggplot(counts) +
+  geom_bar(aes(x = reorder_within(cell.type, -count, dextramer), y = count, fill = condition),
+           stat = 'identity') +
+  scale_x_reordered() +
+  facet_wrap(~ dextramer, scales = 'free') +
+  scale_fill_viridis(discrete = TRUE) +
+  theme_cowplot() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 10),
+        legend.title = element_text(size = 10),
+        axis.text.x = element_text(color = 'black', size = 8, angle = 90, hjust = 1, vjust = 0.5),
+        axis.text.y = element_text(color = 'black', size = 8),
+        legend.text = element_text(size = 10),
+        axis.ticks = element_blank()) +
+  ylab('Unique binding count')
+dev.off()
 

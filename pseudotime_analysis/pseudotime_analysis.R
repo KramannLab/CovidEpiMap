@@ -59,7 +59,7 @@ curves = colnames(pseudotime)
 palette = viridis(100, end = 0.95)
 
 
-pdf(file = paste0(outdir, 'integrated_Tcells_slingshot_curves.pdf'), width = 12)
+pdf(file = paste0(outdir, 'integrated_Tcells_slingshot_curves.pdf'), width = 7.2)
 plot(reducedDim(sds), col = cell.type.colors[as.vector(sc.subset$integrated_annotations)], pch = 16, cex = 0.5)
 lines(sds, lwd = 2, col = 'black')
 # Show which curve cells belong to
