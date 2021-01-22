@@ -556,7 +556,7 @@ compute_stats = function(df, celltype, pathways, conditions, plot = FALSE){
 
 
 
-#---- Nice dot plot of differential expression results from FindMakrers
+#---- Nice dot plot of differential expression results from FindMarkers
 
 # Source
 # https://davemcg.github.io/post/lets-plot-scrna-dotplots/

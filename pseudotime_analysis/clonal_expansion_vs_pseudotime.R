@@ -17,6 +17,7 @@ source('sc_source/sc_source.R')
 indir = '~/sciebo/CovidEpiMap/integrated/'
 outdir = '~/sciebo/CovidEpiMap/trajectory_analysis/'
 
+
 # Subset for cells with a clonotype
 sc.subset = readRDS(file = paste0(indir, 'integrated.RNA.Tcells.pseudotime.subset.rds'))
 sc.subset = subset(sc.subset, patient_clonotype %ni% NA)

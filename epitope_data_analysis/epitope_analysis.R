@@ -57,6 +57,77 @@ dev.off()
 
 
 
+#---- Average percent A0101-2 binding cells per group/cell type
+  
+dex.cells = colnames(dex.subset)
+sc$unique_binders = ifelse(colnames(sc) %in% dex.cells, 'unique_binder', 'non_binder')
+
+# Fraction of unique binders / non-binders
+df = sc@meta.data %>%
+  filter(integrated_annotations %in% c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1') &
+           condition_collapsed %ni% 'healthy') %>%
+  group_by(integrated_annotations, patient, unique_binders) %>%
+  count %>% 
+  group_by(integrated_annotations, patient) %>% 
+  mutate(frac = n/sum(n)) %>%
+  as.data.frame
+df$patient = as.character(df$patient)
+
+
+# Add condition
+patients = c('mild', 'mild', 'severe', 
+              'mild', 'mild', 'mild', 
+              'severe', 'severe', 'severe',
+              'mild', 'severe', 'severe')
+names(patients) = c('1', '2', '3', 
+             '5', '6', '7', 
+             '11', '12', '13', 
+             '15', '18', '19')
+df$condition_collapsed = patients[df$patient]
+
+
+# Add counts of zero
+for (i in 1:nrow(df)){
+  if (df[i,'frac'] == 1){
+    new_row = df[i,]
+    new_row[,'unique_binders'] = 'unique_binder'
+    new_row[,'frac'] = 0
+    new_row[,'n'] = 0
+    df = rbind(df, new_row)
+  }
+}
+
+
+# Box plot
+df.plot = df %>% filter(unique_binders == 'unique_binder')
+
+pdf(file = paste0(outdir, 'binding_counts_unique/unique_binding_fraction.pdf'), width = 5, height = 5)
+ggplot(df.plot, aes(x=integrated_annotations, y = frac)) + 
+  geom_boxplot(aes(fill=condition_collapsed)) +
+  scale_fill_viridis(discrete = TRUE, option = 'viridis') +
+  theme_classic() +
+  theme(axis.text.x = element_text(color = 'black', size = 8, angle = 90, vjust = 0.5, hjust = 1),
+        axis.ticks = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(color = 'black'),
+        axis.text.y = element_text(color = 'black')) +
+  labs(y = 'Fraction of unique binding',
+       fill = 'Condition')
+dev.off()
+
+
+# Wilcoxon rank sum test per cell type (none significant)
+df.1 = df %>% filter(integrated_annotations == 'CD8+ TEMRA cells' &
+                       unique_binders == 'unique_binder')
+wilcox.test(df.1$frac ~ df.1$condition_collapsed)
+df.2 = df %>% filter(integrated_annotations == 'CD8+ effector memory T cells 1' &
+                       unique_binders == 'unique_binder')
+wilcox.test(df.2$frac ~ df.2$condition_collapsed)
+
+
+
 #---- Plot clonal expansion of non-binding cells
 
 non.binders = subset(sc, A0201_5 == 'NO' & A1101_30 == 'NO' & A0201_6 == 'NO' & 
@@ -121,53 +192,6 @@ xlab('Pseudotime (Lineage 2)') +
 ylab('Clonotype size')
 dev.off()
 
-
-
-#---- Analysis of A0101-2 binding COVID vs NON-COVID cells
-
-Idents(dex.subset) = 'COVID'
-
-markers = FindMarkers(dex.subset, ident.1 = 'COVID',
-      				ident.2 = 'NON-COVID', 
-      				min.pct = 0.25,
-      				logfc.threshold = 0)
-markers = markers[order(markers$avg_log2FC, decreasing = TRUE),]
-
-# Write to file
-markers.out = markers[markers$p_val_adj < 0.05,]
-markers.out$gene = rownames(markers.out)
-
-file.prefix = 'COVID_vs_NON-COVID_A0101-2_binding_cells'
-write.table(markers.out[,c(6,1:5)], 
-        file = paste0(outdir, file.prefix, '_dge.txt'),
-        quote = FALSE, 
-        sep = '\t', 
-        row.names = FALSE)
-
-
-# GSEA
-bg.genes = rownames(dex.subset)
-stats = markers$avg_log2FC
-names(stats) = rownames(markers)
-stats = stats[!is.na(stats)]
-
-# GO
-run_gsea(bg.genes = bg.genes, stats = stats, 
-		category = 'C5', subcategory = 'BP',
-		out.dir = outdir, plot.title = 'GO',
-		file.prefix = file.prefix, n = 40)
-
-# PID
-run_gsea(bg.genes = bg.genes, stats = stats, 
-		category = 'C2', subcategory = 'PID',
-		out.dir = outdir, plot.title = 'PID',
-		file.prefix = file.prefix)
-
-# Immunological signature
-run_gsea(bg.genes = bg.genes, stats = stats, 
-		category = 'C7',
-		out.dir = outdir, plot.title = 'Immunological Signature',
-		file.prefix = file.prefix)
 
 
 

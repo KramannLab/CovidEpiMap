@@ -177,32 +177,3 @@ for (gene in genes){
   dev.off()
 }
 
-
-
-#---- HLA-DR (ADT library) and CD38 expression 
-
-DefaultAssay(sc) = 'RNA'
-plot.subset = subset(sc, condition %in% c('active_severe', 'active_mild') &
-                       integrated_annotations %ni% 'CD8+ exhausted T cells')
-plot.subset$condition = droplevels(plot.subset$condition)
-
-genes = c('HLA-DR', 'CD38')
-for (gene in genes){
-  pdf(file = paste0(indir, 'integrated_Tcells_', gene, '.pdf'), height = 5, width = 5)
-  print(VlnPlot(plot.subset, features = gene, 
-                group.by = 'integrated_annotations', 
-                split.by = 'condition', 
-                pt.size = 0, 
-                slot = 'scale.data',
-                split = TRUE) +
-          scale_fill_viridis(discrete = TRUE) +
-          theme_cowplot() +
-          theme(axis.text.x = element_text(size = 8, angle = 90, hjust = 1),
-                axis.title.x = element_blank(),
-                axis.title.y = element_text(size = 10),
-                axis.ticks = element_blank()) +
-          ylab(paste0('Scaled ', gene, ' expression')) +
-          ggtitle(''))
-  dev.off()
-}
-

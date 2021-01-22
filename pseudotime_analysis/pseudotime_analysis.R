@@ -169,6 +169,23 @@ plot_grid(top_row, bottom_row, ncol = 1, rel_heights = c(1/16, 15/16))
 dev.off()
 
 
+# Test difference in condition densitiy along pseudotime (severe vs mild)
+df = sc.subset@meta.data
+df = df[df$condition %ni% 'healthy',]
+df$condition_collapsed = droplevels(df$condition_collapsed)
+
+# Kolmogorov-Smirnof method to test differenc ein distribution 
+# Use this method over Wilcoxon rank test as it is more sensitive to shape changes in distribution
+# and ours appear to be bimodal.
+
+# Lineage 1 (p < 2.2e-16, D = 0.248)
+ks.test(df[df$condition_collapsed == 'mild','slingshot_pseudotime_curve1'],
+        df[df$condition_collapsed == 'severe','slingshot_pseudotime_curve1'])
+# Lineage 2 (p < 2.2e-16, D = 0.28651)
+ks.test(df[df$condition_collapsed == 'mild','slingshot_pseudotime_curve2'],
+        df[df$condition_collapsed == 'severe','slingshot_pseudotime_curve2'])
+
+
 
 #--- Check for imbalance in local distribution of cells according to condition
 
