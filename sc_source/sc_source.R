@@ -595,7 +595,7 @@ plot_dge_nice = function(dge.table, genes){
                            oob = scales::squish) +
     cowplot::theme_cowplot() +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 8),
-          axis.text.y = element_text(size = 8),
+          axis.text.y = element_text(size = 8, hjust = 1),
           axis.ticks = element_blank()) +
     labs(x = '',
          y = '',

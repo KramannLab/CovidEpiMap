@@ -100,16 +100,26 @@ for (cell.type in names(term.list)){
 
 
 # From DGEA of epitope A0101-2-binding cells (severe vs mild)
-indir = '~/sciebo/CovidEpiMap/epitope_analysis/severe_vs_mild/'
+indir = '~/sciebo/CovidEpiMap/epitope_analysis/severe_vs_mild/GSEA/'
 comp = 'severe_vs_mild'
 
 term.list = list('CD8+ effector memory T cells 1' = c('GO T cell receptor signaling pathway',
                                                       'GO Cytokine mediated signaling pathway',
                                                       'GO Activation of Immune response',
+                                                      'GO Response to Interferon Gamma',
+                                                      'GO Interferon Gamma mediated signaling pathway',
+                                                      'GO Immune response regulating signaling pathway',
+                                                      'GO Antigen receptor mediated signaling pathway',
                                                       'PID NFAT TFPathway',
-                                                      'PID AP1 Pathway'),
+                                                      'PID AP1 Pathway',
+                                                      'PID IL6 7 Pathway'),
                  'CD8+ TEMRA cells' = c('GO T cell receptor signaling pathway',
                                         'GO Activation of Immune response',
+                                        'GO Response to Interleukin 1',
+                                        'GO Positive regulation of Immune response',
+                                        'GO Activation of Innate Immune response',
+                                        'GO Innate Immune response activating signal transduction',
+                                        'GO Antigen receptor mediated signaling pathway',
                                         'PID AP1 Pathway'))
 
 for (cell.type in names(term.list)){

@@ -29,9 +29,6 @@ dev.off()
 
 #---- Epitope A0101-2-binding cells (severe vs mild)
 
-# Activation genes to plot
-genes = c('CD69', 'CD44','HLA-DRA', 'CD38')
-
 # Get DGEA results
 indir = '~/sciebo/CovidEpiMap/epitope_analysis/severe_vs_mild/'
 pattern = 'severe_vs_mild_dge.txt'
@@ -42,16 +39,11 @@ cell.types = sub(pattern, '', de.files)
 cell.types = sub('_A0101-2_binding_', '', cell.types)
 names(dge.table) = cell.types
 
-pdf(file = paste0(indir, '../A0101-2_binding_severe_vs_mild_selected_diff_genes_activation.pdf'), height = 5, width = 4)
-plot_dge_nice(dge.table = dge.table, genes = genes)
-dev.off()
-
-
-# General DEGs to plot
+# Genes to plot
 genes = read.table(file = paste0(indir, 'DEG_epitope_specific_cells.txt'), header = TRUE)
 genes = genes$gene
 
-pdf(file = paste0(indir, '../A0101-2_binding_severe_vs_mild_selected_diff_genes.pdf'), height = 11, width = 4)
+pdf(file = paste0(indir, '../A0101-2_binding_severe_vs_mild_selected_diff_genes.pdf'), height = 12.2, width = 4)
 plot_dge_nice(dge.table = dge.table, genes = genes)
 dev.off()
 
