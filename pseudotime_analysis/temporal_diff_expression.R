@@ -253,7 +253,7 @@ file.prefix.2 = 'condition_test_lineage2'
 plot_top_genes(gene.set = genes.1, model = sce, n = 100, 
 				out.dir = outdir, file.name = paste0(file.prefix.1, '_top_genes'))
 
-plot_top_genes(gene.set = genes.2, model = sce, n = 100, 
+plot_top_genes(gene.set = genes.2, model = sce, n = length(genes.2), 
 				out.dir = outdir, file.name = paste0(file.prefix.2, '_top_genes'))
 
 
