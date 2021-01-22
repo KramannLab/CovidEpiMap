@@ -168,11 +168,12 @@ unique.binders = colnames(dex.subset)
 df = df[rownames(df) %in% unique.binders,]
 
 
-# Scatter plot
-pdf(file = paste0(outdir, 'A0101-2_binding_cells_clonotype_size_vs_pseudotime.pdf'), width = 7, height = 4)
+# Scatter plot (log scale)
+pdf(file = paste0(outdir, 'A0101-2_binding_cells_clonotype_size_vs_pseudotime.pdf'), width = 7, height = 3.5)
 # Lineage 1
 ggplot(df, aes(x = slingshot_pseudotime_curve1, y = clonotype_size)) + 
 geom_point(aes(colour = integrated_annotations)) + 
+scale_y_continuous(trans = 'log10') +
 scale_colour_manual(values = cell.type.colors) +
 stat_smooth(method = 'loess', colour = 'black') +
 facet_wrap(. ~ condition_collapsed) +
@@ -182,7 +183,8 @@ xlab('Pseudotime (Lineage 1)') +
 ylab('Clonotype size')
 # Lineage 2
 ggplot(df, aes(x = slingshot_pseudotime_curve2, y = clonotype_size)) + 
-geom_point(aes(colour = integrated_annotations)) + 
+geom_point(aes(colour = integrated_annotations)) +
+scale_y_continuous(trans = 'log10') +
 scale_colour_manual(values = cell.type.colors) +
 stat_smooth(method = 'loess', colour = 'black') +
 facet_wrap(. ~ condition_collapsed) +
@@ -191,7 +193,6 @@ theme(strip.background = element_rect(colour = 'black', fill = 'lightgrey')) +
 xlab('Pseudotime (Lineage 2)') +
 ylab('Clonotype size')
 dev.off()
-
 
 
 

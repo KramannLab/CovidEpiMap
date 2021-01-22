@@ -60,7 +60,7 @@ df = df[df$patient != '29',]
 
 
 # Plot
-pdf(file = paste0(outdir, 'clonotype_expansion_group_abundance_cell_type_without_patient29.pdf'), width = 6, height = 5)
+pdf(file = paste0(outdir, 'clonotype_expansion_group_abundance_cell_type_without_patient29.pdf'), width = 6, height = 4)
 ggplot(df, aes(x = integrated_annotations, 
                fill = factor(clonotype_cut, levels = group.order, exclude = NULL))) + 
   geom_bar(position = 'fill') + 
@@ -74,7 +74,7 @@ ggplot(df, aes(x = integrated_annotations,
        y =  'Relative abundance')
 dev.off()
 
-pdf(file = paste0(outdir, 'clonotype_expansion_group_abundance_condition_without_patient29.pdf'), width = 5, height = 5)
+pdf(file = paste0(outdir, 'clonotype_expansion_group_abundance_condition_without_patient29.pdf'), width = 5, height = 4)
 ggplot(df, aes(x = condition,
                fill = factor(clonotype_cut, levels = group.order, exclude = NULL))) + 
   geom_bar(position = 'fill') + 
