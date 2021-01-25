@@ -209,8 +209,6 @@ for (chain in chains){
 
 
 # Multiple alignment with Clustal Omega
-setwd(paste0(outdir, 'clustal_omega/'))
-
 for (chain in chains){
   for (cut in names(cut.names)){
     # Read sequences

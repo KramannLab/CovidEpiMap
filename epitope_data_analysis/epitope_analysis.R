@@ -178,7 +178,9 @@ scale_colour_manual(values = cell.type.colors) +
 stat_smooth(method = 'loess', colour = 'black') +
 facet_wrap(. ~ condition_collapsed) +
 theme_classic() +
-theme(strip.background = element_rect(colour = 'black', fill = 'lightgrey')) +
+theme(strip.background = element_rect(colour = 'black', fill = 'lightgrey'),
+      axis.ticks = element_blank(),
+      axis.text.y = element_text(color = 'black')) +
 xlab('Pseudotime (Lineage 1)') +
 ylab('Clonotype size')
 # Lineage 2
@@ -189,7 +191,9 @@ scale_colour_manual(values = cell.type.colors) +
 stat_smooth(method = 'loess', colour = 'black') +
 facet_wrap(. ~ condition_collapsed) +
 theme_classic() +
-theme(strip.background = element_rect(colour = 'black', fill = 'lightgrey')) +
+theme(strip.background = element_rect(colour = 'black', fill = 'lightgrey'),
+      axis.ticks = element_blank(),
+      axis.text.y = element_text(color = 'black')) +
 xlab('Pseudotime (Lineage 2)') +
 ylab('Clonotype size')
 dev.off()
