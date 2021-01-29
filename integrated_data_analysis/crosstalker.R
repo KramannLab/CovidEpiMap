@@ -4,6 +4,11 @@
 
 #---- Visualize CellPhoneDB results with CrossTalkeR
 
+library(clusterProfiler)
+library(org.Hs.eg.db)
+library(patchwork)
+library(dplyr)
+library(viridis)
 source('sc_source/sc_source.R')
 source.folder = '~/sciebo/CovidEpiMap/CrossTalkeR/CrossTalkeR/'
 devtools::load_all(source.folder)
@@ -14,7 +19,7 @@ setwd(wkdir)
 
 crosstalker_report = function(Control, Case, Genes, Indir, Outdir){
 	# Define path for control and case (CellPhoneDB has been run separately on these)
-	# Files have already been filtered and corrected with organize.py from CrossTalkeR package
+	# Files have already been filtered and corrected with format.py from CrossTalkeR package
 	paths = c('CTR' = paste0(Indir, Control, '_filtered_corrected.csv'),
 			'EXP' = paste0(Indir, Case, '_filtered_corrected.csv'))
 
@@ -22,7 +27,6 @@ crosstalker_report = function(Control, Case, Genes, Indir, Outdir){
 	outdir = paste0(Outdir, '/', Control, '_vs_', Case, '/')
 
 	generate_report(lrpaths = paths,
-					genes = Genes,
 					out_path = outdir,
 					threshold = 0,
 					out_file = paste0(Control, '_vs_', Case, '.html'),
@@ -33,49 +37,32 @@ crosstalker_report = function(Control, Case, Genes, Indir, Outdir){
 # Healthy vs active mild
 control = 'healthy'
 case = 'active_mild'
-genes = c('MIF', 'KLRK1')
-crosstalker_report(Control = control, Case = case, Genes = genes, Indir = indir, Outdir = wkdir)
+crosstalker_report(Control = control, Case = case, Indir = indir, Outdir = wkdir)
 
 
 # Healthy vs active severe
 control = 'healthy'
 case = 'active_severe'
-genes = c('MIF', 'KLRK1')
-crosstalker_report(Control = control, Case = case, Genes = genes, Indir = indir, Outdir = wkdir)
-
-
-# Healthy vs recovered mild
-control = 'healthy'
-case = 'recovered_mild'
-genes = c('MIF', 'KLRK1')
-crosstalker_report(Control = control, Case = case, Genes = genes, Indir = indir, Outdir = wkdir)
-
-
-# Healthy vs recovered severe
-control = 'healthy'
-case = 'recovered_severe'
-genes = c('MIF', 'KLRK1')
-crosstalker_report(Control = control, Case = case, Genes = genes, Indir = indir, Outdir = wkdir)
+crosstalker_report(Control = control, Case = case, Indir = indir, Outdir = wkdir)
 
 
 # Active mild vs active severe
 control = 'active_mild'
 case = 'active_severe'
-genes = c('MIF', 'KLRK1')
-data = crosstalker_report(Control = control, Case = case, Genes = genes, Indir = indir, Outdir = wkdir)
+data = crosstalker_report(Control = control, Case = case, Indir = indir, Outdir = wkdir)
 
 
 # Recovered mild vs recovered severe
 control = 'recovered_mild'
 case = 'recovered_severe'
-genes = c('MIF', 'KLRK1')
-crosstalker_report(Control = control, Case = case, Genes = genes, Indir = indir, Outdir = wkdir)
+crosstalker_report(Control = control, Case = case, Indir = indir, Outdir = wkdir)
 
 
 
 #---- Save selected plots from CrossTalkeR (active severe vs active mild)
 
 outdir = paste0(wkdir, 'active_mild_vs_active_severe/')
+
 
 # Single cell-cell interaction plot (active mild)
 pdf(file = paste0(outdir, 'single_cci_plot_active_mild.pdf'), width = 10, height = 10)
@@ -239,8 +226,69 @@ dev.off()
 
 
 
+#---- KEGG pathway analysis
+
+outdir = 'recovered_mild_vs_recovered_severe/'
+data = readRDS(file = paste0(outdir, 'LR_data_final.Rds'))
+cell.types = unique(c(unname(data@tables$EXP_x_CTR$Ligand.Cluster),
+  unname(data@tables$EXP_x_CTR$Receptor.Cluster)))
 
 
-
-
+pdf(file = paste0(outdir, 'KEGG_enrichment_significant.pdf'), height = 5, width = 7)
+for (cell.type in cell.types){
+  # Get interactions up/down in active mild vs active severe
+  up = data@tables$EXP_x_CTR %>%
+    filter(MeanLR > 0 & Ligand.Cluster %in%  cell.type)
+  down = data@tables$EXP_x_CTR %>%
+    filter(MeanLR < 0 & Ligand.Cluster %in%  cell.type)
+  
+  # Get unique up/down interactions
+  up_exclu =  unique(up$Ligand)[match(unique(up$Ligand),unique(down$Ligand), nomatch = -1) == -1]
+  down_exclu = unique(down$Ligand)[match(unique(down$Ligand),unique(up$Ligand), nomatch = -1) == -1]
+  
+  # KEGG enrichment analysis
+  genes_up =  bitr(up_exclu, fromType = 'SYMBOL', toType = c('ENTREZID', 'ENSEMBL'), OrgDb = org.Hs.eg.db)
+  genes_dw =  bitr(down_exclu, fromType = 'SYMBOL', toType = c('ENTREZID', 'ENSEMBL'), OrgDb = org.Hs.eg.db)
+  enrich_up = enrichKEGG(genes_up$ENTREZID, organism = 'hsa')
+  enrich_dw = enrichKEGG(genes_dw$ENTREZID, organism = 'hsa')
+  
+  # Plot significant results
+  plot_data = enrich_up@result %>%
+    mutate(log10.p.adjust = -log10(p.adjust)) %>%
+    filter(p.adjust < 0.05) %>%
+    top_n(n = 50, wt = log10.p.adjust)
+  
+  p_up = ggplot(plot_data, aes(x = log10.p.adjust, 
+                          y = reorder(Description,log10.p.adjust))) +
+    geom_bar(stat = 'identity', fill = viridis(2)[2]) +
+    cowplot::theme_cowplot() +
+    theme(axis.ticks = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.x = element_text(size = 10),
+          axis.text.y = element_text(size = 10),
+          title = element_text(size = 12)) +
+    labs(x = bquote(~-Log[10]~'(pAdj)'),
+         title = paste0(cell.type, ': Up interactions'))
+  
+  plot_data = enrich_dw@result %>%
+    mutate(log10.p.adjust = -log10(p.adjust)) %>%
+    filter(p.adjust < 0.05) %>%
+    top_n(n = 50, wt = log10.p.adjust)
+  
+  p_dw = ggplot(plot_data, aes(x = log10.p.adjust, 
+                          y = reorder(Description,log10.p.adjust))) +
+    geom_bar(stat = 'identity', fill = viridis(2)[1]) +
+    cowplot::theme_cowplot() +
+    theme(axis.ticks = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.x = element_text(size = 10),
+          axis.text.y = element_text(size = 10),
+          title = element_text(size = 12)) +
+    labs(x = bquote(~-Log[10]~'(pAdj)'),
+         title = paste0(cell.type, ': Down interactions'))
+  
+  print(p_up)
+  print(p_dw)
+}
+dev.off()
 
