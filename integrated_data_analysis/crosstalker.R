@@ -4,11 +4,6 @@
 
 #---- Visualize CellPhoneDB results with CrossTalkeR
 
-library(clusterProfiler)
-library(org.Hs.eg.db)
-library(patchwork)
-library(dplyr)
-library(viridis)
 source('sc_source/sc_source.R')
 source.folder = '~/sciebo/CovidEpiMap/CrossTalkeR/CrossTalkeR/'
 devtools::load_all(source.folder)
@@ -228,13 +223,18 @@ dev.off()
 
 #---- KEGG pathway analysis
 
+library(clusterProfiler)
+library(org.Hs.eg.db)
+library(patchwork)
+library(dplyr)
+library(viridis)
 outdir = 'recovered_mild_vs_recovered_severe/'
 data = readRDS(file = paste0(outdir, 'LR_data_final.Rds'))
 cell.types = unique(c(unname(data@tables$EXP_x_CTR$Ligand.Cluster),
   unname(data@tables$EXP_x_CTR$Receptor.Cluster)))
 
 
-pdf(file = paste0(outdir, 'KEGG_enrichment_significant.pdf'), height = 5, width = 7)
+pdf(file = paste0(outdir, 'KEGG_enrichment_significant.pdf'), height = 5, width = 8)
 for (cell.type in cell.types){
   # Get interactions up/down in active mild vs active severe
   up = data@tables$EXP_x_CTR %>%
@@ -246,49 +246,53 @@ for (cell.type in cell.types){
   up_exclu =  unique(up$Ligand)[match(unique(up$Ligand),unique(down$Ligand), nomatch = -1) == -1]
   down_exclu = unique(down$Ligand)[match(unique(down$Ligand),unique(up$Ligand), nomatch = -1) == -1]
   
-  # KEGG enrichment analysis
-  genes_up =  bitr(up_exclu, fromType = 'SYMBOL', toType = c('ENTREZID', 'ENSEMBL'), OrgDb = org.Hs.eg.db)
-  genes_dw =  bitr(down_exclu, fromType = 'SYMBOL', toType = c('ENTREZID', 'ENSEMBL'), OrgDb = org.Hs.eg.db)
-  enrich_up = enrichKEGG(genes_up$ENTREZID, organism = 'hsa')
-  enrich_dw = enrichKEGG(genes_dw$ENTREZID, organism = 'hsa')
+  # KEGG enrichment (up)
+  if (length(up_exclu) != 0){
+    genes_up =  bitr(up_exclu, fromType = 'SYMBOL', toType = c('ENTREZID', 'ENSEMBL'), OrgDb = org.Hs.eg.db)
+    enrich_up = enrichKEGG(genes_up$ENTREZID, organism = 'hsa')
+    
+    # Plot significant results
+    plot_data = enrich_up@result %>%
+      mutate(log10.p.adjust = -log10(p.adjust)) %>%
+      filter(p.adjust < 0.05) %>%
+      top_n(n = 50, wt = log10.p.adjust)
+    
+    p_up = ggplot(plot_data, aes(x = log10.p.adjust, 
+                                 y = reorder(Description,log10.p.adjust))) +
+      geom_bar(stat = 'identity', fill = viridis(2)[2]) +
+      cowplot::theme_cowplot() +
+      theme(axis.ticks = element_blank(),
+            axis.title.y = element_blank(),
+            axis.text.x = element_text(size = 10),
+            axis.text.y = element_text(size = 10),
+            title = element_text(size = 12)) +
+      labs(x = bquote(~-Log[10]~'(pAdj)'),
+           title = paste0(cell.type, ': Up'))
+    print(p_up)
+  }
   
-  # Plot significant results
-  plot_data = enrich_up@result %>%
-    mutate(log10.p.adjust = -log10(p.adjust)) %>%
-    filter(p.adjust < 0.05) %>%
-    top_n(n = 50, wt = log10.p.adjust)
-  
-  p_up = ggplot(plot_data, aes(x = log10.p.adjust, 
-                          y = reorder(Description,log10.p.adjust))) +
-    geom_bar(stat = 'identity', fill = viridis(2)[2]) +
-    cowplot::theme_cowplot() +
-    theme(axis.ticks = element_blank(),
-          axis.title.y = element_blank(),
-          axis.text.x = element_text(size = 10),
-          axis.text.y = element_text(size = 10),
-          title = element_text(size = 12)) +
-    labs(x = bquote(~-Log[10]~'(pAdj)'),
-         title = paste0(cell.type, ': Up interactions'))
-  
-  plot_data = enrich_dw@result %>%
-    mutate(log10.p.adjust = -log10(p.adjust)) %>%
-    filter(p.adjust < 0.05) %>%
-    top_n(n = 50, wt = log10.p.adjust)
-  
-  p_dw = ggplot(plot_data, aes(x = log10.p.adjust, 
-                          y = reorder(Description,log10.p.adjust))) +
-    geom_bar(stat = 'identity', fill = viridis(2)[1]) +
-    cowplot::theme_cowplot() +
-    theme(axis.ticks = element_blank(),
-          axis.title.y = element_blank(),
-          axis.text.x = element_text(size = 10),
-          axis.text.y = element_text(size = 10),
-          title = element_text(size = 12)) +
-    labs(x = bquote(~-Log[10]~'(pAdj)'),
-         title = paste0(cell.type, ': Down interactions'))
-  
-  print(p_up)
-  print(p_dw)
+  # KEGG enrichment (down)
+  if(length(down_exclu) != 0){
+    genes_dw =  bitr(down_exclu, fromType = 'SYMBOL', toType = c('ENTREZID', 'ENSEMBL'), OrgDb = org.Hs.eg.db)
+    enrich_dw = enrichKEGG(genes_dw$ENTREZID, organism = 'hsa')
+    plot_data = enrich_dw@result %>%
+      mutate(log10.p.adjust = -log10(p.adjust)) %>%
+      filter(p.adjust < 0.05) %>%
+      top_n(n = 50, wt = log10.p.adjust)
+    
+    p_dw = ggplot(plot_data, aes(x = log10.p.adjust, 
+                                 y = reorder(Description,log10.p.adjust))) +
+      geom_bar(stat = 'identity', fill = viridis(2)[1]) +
+      cowplot::theme_cowplot() +
+      theme(axis.ticks = element_blank(),
+            axis.title.y = element_blank(),
+            axis.text.x = element_text(size = 10),
+            axis.text.y = element_text(size = 10),
+            title = element_text(size = 12)) +
+      labs(x = bquote(~-Log[10]~'(pAdj)'),
+           title = paste0(cell.type, ': Down'))
+    print(p_dw)
+  }
 }
 dev.off()
 
