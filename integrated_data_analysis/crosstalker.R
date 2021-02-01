@@ -29,28 +29,16 @@ crosstalker_report = function(Control, Case, Genes, Indir, Outdir){
 }
 
 
-# Healthy vs active mild
-control = 'healthy'
-case = 'active_mild'
-crosstalker_report(Control = control, Case = case, Indir = indir, Outdir = wkdir)
-
-
-# Healthy vs active severe
-control = 'healthy'
-case = 'active_severe'
-crosstalker_report(Control = control, Case = case, Indir = indir, Outdir = wkdir)
-
-
 # Active mild vs active severe
 control = 'active_mild'
 case = 'active_severe'
-data = crosstalker_report(Control = control, Case = case, Indir = indir, Outdir = wkdir)
+data_active = crosstalker_report(Control = control, Case = case, Indir = indir, Outdir = wkdir)
 
 
 # Recovered mild vs recovered severe
 control = 'recovered_mild'
 case = 'recovered_severe'
-crosstalker_report(Control = control, Case = case, Indir = indir, Outdir = wkdir)
+data_recov = crosstalker_report(Control = control, Case = case, Indir = indir, Outdir = wkdir)
 
 
 
@@ -61,7 +49,8 @@ outdir = paste0(wkdir, 'active_mild_vs_active_severe/')
 
 # Single cell-cell interaction plot (active mild)
 pdf(file = paste0(outdir, 'single_cci_plot_active_mild.pdf'), width = 10, height = 10)
-plot_cci(graph = data@graphs$CTR,
+# Modified function to fit coloring scheme
+plot_cci(graph = data_active@graphs$CTR,
          colors = cell.type.colors,
          plt_name = '',
          coords = data@coords[V(data@graphs$CTR)$name,],
@@ -75,9 +64,10 @@ plot_cci(graph = data@graphs$CTR,
          vfactor = 12)
 dev.off()
 
+
 # Single cell-cell interaction plot (active severe)
 pdf(file = paste0(outdir, 'single_cci_plot_active_severe.pdf'), width = 10, height = 10)
-plot_cci(graph = data@graphs$EXP,
+plot_cci(graph = data_active@graphs$EXP,
          colors = cell.type.colors,
          plt_name = '',
          coords = data@coords[V(data@graphs$EXP)$name,],
@@ -91,9 +81,10 @@ plot_cci(graph = data@graphs$EXP,
          vfactor = 12)
 dev.off()
 
+
 # Differential cell-cell interaction plot
 pdf(file = paste0(outdir, 'differential_cci_plot.pdf'), width = 10, height = 10)
-plot_cci(graph = data@graphs$EXP_x_CTR,
+plot_cci(graph = data_active@graphs$EXP_x_CTR,
          colors = cell.type.colors,
          plt_name = '',
          coords = data@coords[V(data@graphs$EXP_x_CTR)$name,],
@@ -220,6 +211,35 @@ plot_rank(all_data)
 dev.off()
 
 
+# Sankey plot of IL10 for recovered mild vs severe
+outdir = 'recovered_mild_vs_recovered_severe/'
+target = c('SELL')
+
+data = data_recov@tables$EXP_x_CTR
+data = data[grep(target, data$allpair),]
+data$Expression = ifelse(data$MeanLR > 0, 'Up', 'Down')
+data$AbsMeanLR = abs(data$MeanLR)
+
+pdf(file = paste0(outdir, 'IL10_sankey.pdf'), width = 10, height = 5)
+ggplot(data, aes(y = AbsMeanLR,
+                 axis1 = Ligand.Cluster,
+                 axis2 = Ligand,
+                 axis3 = Receptor,
+                 axis4 = Receptor.Cluster)) +
+  geom_alluvium(aes(fill = Expression), width = 1/12) +
+  geom_stratum(width = 1/12) +
+  geom_label(stat = 'stratum', aes(label = after_stat(stratum))) +
+  scale_x_discrete(limits = c('Ligand.Cluster', 'Ligand', 
+                              'Receptor', 'Receptor.Cluster')) +
+  cowplot::theme_cowplot() +
+  theme(axis.ticks = element_blank(),
+        axis.line = element_blank(),
+        axis.title.y = element_blank(), 
+        axis.text.y = element_blank()) +
+  scale_fill_viridis_d()
+dev.off()
+
+
 
 #---- KEGG pathway analysis
 
@@ -228,7 +248,6 @@ library(org.Hs.eg.db)
 library(patchwork)
 library(dplyr)
 library(viridis)
-outdir = 'recovered_mild_vs_recovered_severe/'
 data = readRDS(file = paste0(outdir, 'LR_data_final.Rds'))
 cell.types = unique(c(unname(data@tables$EXP_x_CTR$Ligand.Cluster),
   unname(data@tables$EXP_x_CTR$Receptor.Cluster)))
