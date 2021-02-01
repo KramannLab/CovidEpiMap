@@ -102,8 +102,14 @@ for (i in 1:nrow(df)){
 df.plot = df %>% filter(unique_binders == 'unique_binder')
 
 pdf(file = paste0(outdir, 'binding_counts_unique/unique_binding_fraction.pdf'), width = 5, height = 5)
-ggplot(df.plot, aes(x=integrated_annotations, y = frac)) + 
-  geom_boxplot(aes(fill=condition_collapsed)) +
+ggplot(df.plot, aes(x = integrated_annotations, y = frac)) + 
+  geom_boxplot(aes(fill = condition_collapsed), 
+               outlier.alpha = 0) +
+  geom_dotplot(aes(fill = condition_collapsed),
+               binaxis = 'y',
+             stackdir = 'center', 
+             position = position_dodge(),
+             dotsize = 0.5) +
   scale_fill_viridis(discrete = TRUE, option = 'viridis') +
   theme_classic() +
   theme(axis.text.x = element_text(color = 'black', size = 8, angle = 90, vjust = 0.5, hjust = 1),
