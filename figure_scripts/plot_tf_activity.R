@@ -82,6 +82,8 @@ rownames(df) = rownames(tf.df)
 df.plot = df[,colnames(df) %in% sig.cell.types]
 # Keep only complete cases except if TF is significant in at least one case
 df.plot = df.plot[rowSums(!is.na(df.plot)) == ncol(df.plot) | rownames(df.plot) %in% sig.regulons, ]
+# Keep only if TF activity > 2.5 or < -2.5 for non-significant TF
+df.plot = df.plot[apply(df.plot>2,1,any) | apply(df.plot< -2,1,any) | rownames(df.plot) %in% sig.regulons,]
 
 # Define colour palette
 paletteLength = 100
@@ -108,10 +110,10 @@ tf_ordered = tf_ordered[tf_ordered %ni% top]
 tf_ordered_all = c(top, tf_ordered, rownames(df.plot)[!rownames(df.plot) %in% c(top, tf_ordered)])
 
 # Plot
-pdf(file = paste0(indir,'active_severe_active_mild_tf_activity.pdf'), width = 2.3, height = 6)
+pdf(file = paste0(indir,'active_severe_active_mild_tf_activity.pdf'), width = 2.3, height = 7)
 pheatmap(df.plot[tf_ordered_all,celltype_ordered],
          fontsize_col = 7, 
-         fontsize_row = 2.3,
+         fontsize_row = 5,
          color = myColor, 
          breaks = viperBreaks, 
          main = '',
@@ -120,7 +122,7 @@ pheatmap(df.plot[tf_ordered_all,celltype_ordered],
          cluster_rows = FALSE,
          treeheight_row = 0, 
          treeheight_col = 0,
-         labels_row = ifelse(tf_ordered_all %in% sig.regulons, tf_ordered_all, ''))
+         border = NA)
 dev.off()
 
 
