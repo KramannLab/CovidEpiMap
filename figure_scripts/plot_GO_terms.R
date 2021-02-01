@@ -15,10 +15,6 @@ in.dir = '~/sciebo/CovidEpiMap/geneset_enrichment/'
 comp = 'active_severe_vs_active_mild'
 
 term.list = list(
-  'CD8+ naive T cells' = c('GO T cell proliferation',
-                           'GO Positive regulation of T cell proliferation',
-                           'GO Positive regulation of viral life cycle',
-                           'GO Positive regulation of immune response'),
   'CD8+ NK-like early effector T cells' = c('GO T cell receptor signaling pathway',
                                             'GO Positive regulation of cell activation',
                                             'GO Regulation of T cell activation',
@@ -39,36 +35,27 @@ term.list = list(
                                        'GO Negative regulation of viral process',
                                        'GO Respiratory electron transport chain',
                                        'GO Oxidative phosphorylation',
-                                       'GO Cellular respiration'),
+                                       'GO Cellular respiration',
+                                       'GO Response to interferon beta'),
   'CD8+ effector memory T cells 2' = c('GO Response to virus',
                                        'GO Negative regulation of viral process',
                                        'GO Negative regulation of viral life cycle',
                                        'GO Response to type I interferon',
-                                       'GO Cellular ketone metabolic process'),
+                                       'GO Cellular ketone metabolic process',
+                                       'GO Response to type I interferon'),
   'CD8+ cycling effector T cells' = c('GO Positive regulation of canonical Wnt signaling pathway',
                                       'GO Mitotic cell cycle',
                                       'GO Cell division',
                                       'GO Cell cycle process',
                                       'GO Cell cycle phase transition',
-                                      'GO Cell cycle G2 M Phase transition'),
-  'CD8+ NK-like TEMRA cells' = c('GO Viral genome replication',
-                                 'GO Negative regulation of viral genome replication',
-                                 'GO Negative regulation of viral process',
-                                 'GO Negative regulation of viral life cycle',
-                                 'GO T cell receptor signaling pathway',
-                                 'GO Response to virus',
+                                      'GO Cell cycle G2 M Phase transition',
+                                      'GO Response to type I interferon'),
+  'CD8+ NK-like TEMRA cells' = c('GO Response to virus',
                                  'GO Defense response to virus',
                                  'GO Response to type I interferon',
                                  'GO Response to interferon beta',
                                  'GO Antigen processing and presentation of peptide or polysaccharide antigen via MHC class II'), 
-  'CD8+ TEMRA cells'= c('GO Viral genome replication',
-                        'GO Negative regulation of viral genome replication',
-                        'GO Negative regulation of viral process',
-                        'GO Negative regulation of viral life cycle',
-                        'GO T cell activation',
-                        'GO Response to type I interferon',
-                        'GO Regulation of T cell activation',
-                        'GO Positive regulation of immune response',
+  'CD8+ TEMRA cells'= c('GO Response to type I interferon',
                         'GO Antigen processing and presentation of peptide or polysaccharide antigen via MHC class II',
                         'GO Adaptive immune response'))
 
@@ -154,14 +141,11 @@ term.list = list('lineage1' = c('GO Viral gene expression',
                                 'GO Protein targeting to membrane',
                                 'GO Immune effector process',
                                 'GO Defense response',
-                                'GO Cell activation'),
-                 'lineage2' = c('GO Viral gene expression',
-                                'GO Negative regulation of viral genome replication',
-                                'GO Regulation of Natural Killer cell activation',
+                                'GO Cell activation',
+                                'GO Apoptotic process'),
+                 'lineage2' = c('GO Regulation of Natural Killer cell activation',
                                 'GO Positive regulation of natural killer cell mediated immunity',
-                                'GO Positive regulation of cytokine production involved in immune response',
-                                'GO Positive regulation of innate immune response',
-                                'GO Negative regulation of lymphocyte activation')) 
+                                'GO Positive regulation of cytokine production involved in immune response')) 
 
 for (lineage in names(term.list)){
   # Get selected terms
@@ -184,22 +168,10 @@ for (lineage in names(term.list)){
 }
 
 
-# Lineage split test and diff end test
-term.list = list('lineage_split_test' = c('GO Sensory Perception of Smell',
-                                          'GO Regulation of Natural Killer Cell Activation',
+# Lineage split test
+term.list = list('lineage_split_test' = c('GO Regulation of Natural Killer Cell Activation',
                                           'GO Positive regulation of natural killer cell mediated immunity',
-                                          'GO Positive regulation of cytokine production involved in immune response',
-                                          'GO Positive regulation of immune effector process',
-                                          'GO Apoptotic cell clearance',
-                                          'GO Response to cytokine',
-                                          'GO Immune effector process',
-                                          'GO Defense response',
-                                          'GO Cell activation'),
-                 'diff_end_test' = c('GO Positive regulation of natural killer cell mediated immunity',
-                                     'GO ARP2 3 Complex mediated Actin Nucleation',
-                                     'GO Actin Polymerization or Depolymerization',
-                                     'GO Apoptotic mitochondrial changes',
-                                     'GO Apoptotic process'))
+                                          'GO Positive regulation of cytokine production involved in immune response'))
 
 for (comp in names(term.list)){
   # Get selected terms
@@ -228,15 +200,12 @@ term.list = list('lineage1' = c('GO Viral gene expression',
                                 'GO Translational initiation',
                                 'GO Cytoplasmic translation',
                                 'GO Innate Immune response',
-                                'GO Adaptive Immune response',
-                                'GO Immune effector process',
-                                'GO Regulation of immune response'),
-                 'lineage2' = c('GO Viral gene expression',
-                                'GO Regulation of Natural Killer cell activation',
-                                'GO Regulation of cytokine production involved in immune response',
+                                'GO Defense response'),
+                 'lineage2' = c('GO Regulation of Natural Killer cell activation',
                                 'GO Positive regulation of Natural Killer cell mediated immunity',
-                                'GO Positive regulation of innate immune response',
-                                'GO Positive regulation of cytokine production involved in immune response')) 
+                                'GO Positive regulation of cytokine production involved in immune response',
+                                'GO Regulation of Natural Killer cell mediated immunity'))
+
 
 for (lineage in names(term.list)){
   # Get selected terms
@@ -269,4 +238,52 @@ dev.off()
 pdf(file = paste0(outdir, 'significant_GOs_all.pdf'), height = 100, width = 25)
 plot_grid(plotlist = all.plot.list, align = 'hv', ncol = 1)
 dev.off()
+
+
+
+
+
+plot_go_nice = function(gse, terms, title = NULL){
+  suppressPackageStartupMessages(library(ggplot2))
+  suppressPackageStartupMessages(library(viridis))
+  
+  # Format terms 
+  terms.tmp = stringr::str_to_upper(terms)
+  terms.tmp = gsub(' ', '_', terms.tmp)
+  
+  # Subset table
+  gse = gse[gse$pathway %in% terms.tmp,]
+  rownames(gse) = gse$pathway
+  gse = gse[terms.tmp,]
+  gse$pathway = terms
+  gse$log10.padj = -log10(gse$padj)
+  
+  # Plot
+  p = ggplot(gse, aes(x = log10.padj, 
+                       y = reorder(pathway, log10.padj), fill = NES)) +
+    geom_bar(stat = 'identity') +
+    scale_fill_gradient2(low = viridis(2)[1], 
+                           mid = 'lightgrey', 
+                           high = viridis(2)[2], 
+                           midpoint = 0., 
+                           limits = c(-3,3), 
+                           oob = scales::squish,
+                           name = 'NES') +
+    cowplot::theme_cowplot() +
+    theme(plot.title = element_text(hjust = 0, size = 4),
+          axis.ticks = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.x = element_text(size = 10),
+          axis.text.y = element_text(size = 10),
+          title = element_text(size = 12)) +
+    labs(x = bquote(~-Log[10]~'(pAdj)')) +
+    coord_fixed(xlim = c(0, 4)) +
+    ggtitle(title)
+
+  return(p)
+}
+
+
+
+
 

@@ -423,33 +423,30 @@ plot_go_nice = function(gse, terms, title = NULL){
   rownames(gse) = gse$pathway
   gse = gse[terms.tmp,]
   gse$pathway = terms
-  gse$size = abs(gse$NES)
+  gse$log10.padj = -log10(gse$padj)
   
   # Plot
-  p = gse %>%
-    ggplot(aes(x = NES, y = pathway, color = padj, size = size)) +
-    geom_point() +
-    cowplot::theme_cowplot() + 
-    theme(axis.ticks = element_blank(),
-          plot.title = element_text(hjust = 0, size = 4),
-          axis.text.x = element_text(size = 8),
-          axis.text.y = element_text(size = 8),
-          axis.title.x = element_text(size = 10)) +
-    scale_colour_gradient2(low = viridis(2)[2], 
-                           mid = 'lightgrey', 
-                           high = viridis(2)[1], 
-                           midpoint = 0.05, 
-                           limits = c(0,0.1), 
-                           oob = scales::squish,
-                           name = 'pAdj') +
-    labs(x = 'NES',
-         y = '',
-         size = '',
-         title = title) +
-    guides(size = 'none') +
-    scale_size(range = c(1,5),
-               limits = c(1,3)) +
-    coord_fixed(xlim = c(-3.5, 3.5))
+  p = ggplot(gse, aes(x = log10.padj, 
+                      y = reorder(pathway, log10.padj), fill = NES)) +
+    geom_bar(stat = 'identity') +
+    scale_fill_gradient2(low = viridis(2)[1], 
+                         mid = 'lightgrey', 
+                         high = viridis(2)[2], 
+                         midpoint = 0., 
+                         limits = c(-3,3), 
+                         oob = scales::squish,
+                         name = 'NES') +
+    cowplot::theme_cowplot() +
+    theme(plot.title = element_text(hjust = 0, size = 4),
+          axis.ticks = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.x = element_text(size = 10),
+          axis.text.y = element_text(size = 10),
+          title = element_text(size = 12)) +
+    labs(x = bquote(~-Log[10]~'(pAdj)')) +
+    coord_fixed(xlim = c(0, 4)) +
+    ggtitle(title)
+  
   return(p)
 }
 
