@@ -67,6 +67,10 @@ hla.supertype = match.supertype$HLA.supertype
 names(hla.supertype) = match.supertype$peptide.name
 specific_enrichment$hla.supertype = hla.supertype[specific_enrichment$peptide.name]
 specific_enrichment$hla.supertype = factor(specific_enrichment$hla.supertype, levels = c('A02', 'A03', 'A01'))
+specific_enrichment$infection.status= factor(specific_enrichment$infection.status, 
+                                             levels = c('healthy', 'mild active', 'severe active',
+                                                        'mild recovered', 'severe recovered'))
+
 
 # Plot
 pdf(file = 'dextramer_enrichment_bar.pdf',width = 8, height = 4)

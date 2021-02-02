@@ -134,9 +134,29 @@ sc.subset$patient = factor(sc.subset$patient,
 
 
 #---- Visualize UMAP
-pdf(file = 'integrated_RNA_Tcells.pdf', width = 10)
+
+pdf(file = paste0(outdir, 'integrated_RNA_Tcells.pdf'), width = 10)
 DimPlot(sc.subset, cols = cell.type.colors)
 dev.off()
+
+pdf(file = paste0(outdir, 'integrated_RNA_Tcells_condition.pdf'), width = 8.4)
+DimPlot(sc.subset, group.by = 'condition',
+        order = TRUE) +
+  scale_colour_viridis(discrete = TRUE) +
+  theme(axis.ticks = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank())
+dev.off()
+
+pdf(file = paste0(outdir, 'integrated_RNA_Tcells_patient.pdf'), width = 7.3)
+DimPlot(sc.subset, group.by = 'patient',
+        order = TRUE) +
+  scale_colour_viridis(discrete = TRUE, option = 'B') +
+  theme(axis.ticks = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank())
+dev.off()
+
 
 
 
@@ -218,30 +238,6 @@ VlnPlot(sc.subset, features = 'G2M.Score',
         pt.size = 0, 
         split.by = 'condition', 
         cols = viridis(5)) +
-  theme(text = element_text(size = 8),
-        axis.ticks = element_blank(),
-        axis.text.x = element_text(size = 8, angle = 90),
-        axis.text.y = element_text(size = 8),
-        axis.title.x = element_blank()) +
-  labs(y = 'G2M cell cycle score',
-       fill = 'Condition') +
-  ggtitle('')
-VlnPlot(sc.subset, features = 'S.Score', 
-        pt.size = 0, 
-        split.by = 'condition_collapsed', 
-        cols = viridis(3)) +
-  theme(text = element_text(size = 8),
-        axis.ticks = element_blank(),
-        axis.text.x = element_text(size = 8, angle = 90),
-        axis.text.y = element_text(size = 8),
-        axis.title.x = element_blank()) +
-  labs(y = 'S cell cycle score',
-       fill = 'Condition') +
-  ggtitle('')
-VlnPlot(sc.subset, features = 'G2M.Score', 
-        pt.size = 0, 
-        split.by = 'condition_collapsed', 
-        cols = viridis(3)) +
   theme(text = element_text(size = 8),
         axis.ticks = element_blank(),
         axis.text.x = element_text(size = 8, angle = 90),
