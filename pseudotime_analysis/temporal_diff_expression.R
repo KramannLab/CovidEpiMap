@@ -37,7 +37,6 @@ plotGeneCount(sds, models = sce, clusters = apply(slingClusterLabels(sds), 1, wh
 dev.off()
 
 
-
 #---- Test for DE between start- and end-point of lineages (progenitor markers)
 
 # Temporal DE

@@ -111,29 +111,6 @@ dev.off()
 
 
 
-#---- CLEC2B and KLRF1 expression
-
-subset = subset(sc, condition %in% c('active_severe', 'active_mild'))
-subset$condition = droplevels(subset$condition)
-
-markers = c('CLEC2B', 'KLRF1')
-pdf(file = paste0(indir, 'integrated_Tcells_CLEC2B_KLRF1.pdf'), height = 5)
-for (marker in markers){
-  print(VlnPlot(subset, 
-                feature = marker, 
-                split.by = 'condition',
-                pt.size = 0, 
-                split = TRUE, 
-                cols = viridis(2),
-                slot = 'scale.data') +
-          xlab('') +
-          theme(axis.ticks = element_blank(),
-                axis.text.x = element_text(angle = 90)))
-}
-dev.off()
-
-
-
 #---- Heatmap of ADT library expression
 
 DefaultAssay(sc) = 'ADT'
@@ -154,26 +131,4 @@ DoHeatmap(subset(sc, downsample = 500),
                        oob = scales::squish)
 dev.off()
 
-
-
-#---- KLRG1 and IL7R expression 
-
-DefaultAssay(sc) = 'RNA'
-genes = c('KLRG1', 'IL7R')
-for (gene in genes){
-  pdf(file = paste0(indir, 'integrated_Tcells_', gene, '.pdf'), height = 5, width = 5)
-  print(VlnPlot(sc, feature = gene, 
-          pt.size = 0, 
-          group.by = 'integrated_annotations', 
-          slot = 'scale.data',
-          cols = cell.type.colors,
-          sort = TRUE) +
-    NoLegend() +
-    theme(axis.title.x = element_blank(),
-          axis.ticks = element_blank(),
-          axis.text.x = element_text(angle = 90)) +
-    ylab(paste0(gene, ' expression')) +
-    ggtitle(''))
-  dev.off()
-}
 
