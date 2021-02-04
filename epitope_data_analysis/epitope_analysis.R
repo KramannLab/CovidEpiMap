@@ -52,9 +52,42 @@ saveRDS(dex.subset, file = paste0(indir, 'A0101-2.unique.binders.rds'))
 
 pdf(file = paste0(outdir, 'integrated_Tcells_dextramer_A0101-2_unique_binding.pdf'))
 DimPlot(sc, cells.highlight = colnames(dex.subset),
-		cols.highlight = viridis(1), sizes.highlight = 0.1)
+		cols.highlight = viridis(1), 
+		sizes.highlight = 0.1)
 dev.off()
 
+
+
+#---- Plot unique A0101-2 binding top clonotypes
+
+# Get top 5 binding clonotypes
+df = dex.subset@meta.data
+
+clonotypes = df %>% 
+  group_by(patient_clonotype) %>% 
+  count(name = 'clonotype_size') %>% 
+  arrange(desc(clonotype_size)) %>% 
+  head(5)
+clonotypes = clonotypes$patient_clonotype
+
+pdf(file = paste0(outdir, 'integrated_Tcells_dextramer_A0101-2_unique_binding_top_clonotypes.pdf'), width = 7.9)
+for (clonotype in clonotypes){
+  clonotype_cells = rownames(df[df$patient_clonotype %in% clonotype,])
+  cdr3 = unique(df[df$patient_clonotype %in% clonotype,'TCR_cdr3s_aa'])
+  vgene = unique(df[df$patient_clonotype %in% clonotype,'TCR_V_GENE'])
+  jgene = unique(df[df$patient_clonotype %in% clonotype,'TCR_J_GENE'])
+  p = DimPlot(sc, cells.highlight = clonotype_cells,
+          cols.highlight = viridis(2)[1], 
+          sizes.highlight = 0.1,
+          cols = viridis(2)[2]) +
+          ggtitle(paste0(cdr3, ' (n = ', length(clonotype_cells), ') ',
+                         vgene, ' ', jgene)) +
+    theme(axis.ticks = element_blank(),
+          axis.text = element_blank(), 
+          title = element_text(size = 6))
+  print(p)
+}
+dev.off()
 
 
 #---- Average percent A0101-2 binding cells per group/cell type

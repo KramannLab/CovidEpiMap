@@ -9,7 +9,7 @@ library(dplyr)
 library(viridis)
 library(ggplot2)
 library(ComplexHeatmap)
-source('~/Dropbox/UKA/covid_epimap/CovidEpiMap/sc_source/sc_source.R')
+source('sc_source/sc_source.R')
 indir = '~/sciebo/CovidEpiMap/CrossTalkeR/active_mild_vs_active_severe/'
 outdir = '~/sciebo/CovidEpiMap/cell_cell_interaction/'
 condition = 'active_mild'

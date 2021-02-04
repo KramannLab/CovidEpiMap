@@ -88,3 +88,21 @@ ggplot(df, aes(x = condition,
        y =  'Relative abundance')
 dev.off()
 
+
+df$integrated_annotations_condition = factor(df$integrated_annotations_condition,
+                                             levels = paste0(rep(names(cell.type.colors),each = 5), 
+                                                             levels(df$condition)))
+
+pdf(file = paste0(outdir, 'clonotype_expansion_group_abundance_cell_type_condition_without_patient29.pdf'), width = 10, height = 6)
+ggplot(df, aes(x = integrated_annotations_condition, 
+               fill = factor(clonotype_cut, levels = group.order, exclude = NULL))) + 
+  geom_bar(position = 'fill') + 
+  theme_cowplot() + 
+  theme(axis.text.x = element_text(angle = 90, size = 8, vjust = 1, hjust = 1, color = 'black'),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(color = 'black'),
+        axis.ticks = element_blank()) +
+  scale_fill_viridis(discrete = TRUE, na.value = 'lightgrey') +
+  labs(fill = 'Clonal expansion',
+       y =  'Relative abundance')
+dev.off()
