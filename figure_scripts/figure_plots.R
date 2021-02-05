@@ -33,6 +33,84 @@ get_violin(object = sc, features.use = genes[1:3])
 
 
 
+#---- General QC plots
+
+patients = c('29', '31', '32',
+             '1', '2', '15',
+             '3', '11', '19',
+             '5', '6', '7',
+             '12', '13', '18')
+
+# Plot cell count per sample in bar chart
+data = as.data.frame(table(sc$orig.ident))
+colnames(data) = c('sample', 'count')
+data$sample = as.character(sub('_GEX_SURF', '', data$sample))
+data$sample = factor(data$sample, 
+                           levels = patients)
+
+p1 = ggplot(data, aes(x = sample, y = log10(count))) +
+  geom_bar(aes(fill = sample), 
+           alpha = 1, stat = 'identity') +
+  scale_fill_viridis(discrete = TRUE) +
+  xlab('') + 
+  ylab('Number of valid cells (log10)') +
+  theme_cowplot() +
+  theme(axis.text.x = element_text(size = 8),
+        axis.ticks = element_blank(),
+        axis.text.y = element_text(size = 8),
+        axis.title.y = element_text(size = 7),
+        legend.position = 'none')
+
+# Plot UMI count per sample in violin plot
+data = data.frame(cell = names(Idents(sc)), 
+                 UMI = as.numeric(sc$nCount_RNA), 
+                 gene = as.numeric(sc$nFeature_RNA),
+                 sample = sc$orig.ident)
+data$sample = as.character(sub('_GEX_SURF', '', data$sample))
+data$sample = factor(data$sample, 
+                     levels = patients)
+
+p2 = ggplot(data, aes(x = sample, y = log10(UMI))) +
+  geom_boxplot(aes(color = sample),
+               outlier.size = 0.5) +
+  geom_violin(aes(color = sample, fill = sample), 
+              alpha = 0.5) +
+  scale_fill_viridis(discrete = TRUE) +
+  scale_color_viridis(discrete = TRUE) +
+  xlab('') + 
+  ylab('Number of UMIs (log10)') +
+  theme_cowplot() +
+  theme(axis.text.x = element_text(size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title.y = element_text(size = 7),
+        axis.ticks = element_blank(),
+        legend.position = 'none')
+
+# Plot gene count per sample in violin plot
+p3 = ggplot(data, aes(x = sample, y = log10(gene))) +
+  geom_boxplot(aes(color = sample),
+               outlier.size = 0.5) +
+  geom_violin(aes(color = sample, fill = sample), 
+              alpha = 0.5) +
+  scale_fill_viridis(discrete = TRUE) +
+  scale_color_viridis(discrete = TRUE) +
+  xlab('') + 
+  ylab('Number of genes (log10)') +
+  theme_cowplot() +
+  theme(axis.text.x = element_text(size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title.y = element_text(size = 7),
+        axis.ticks = element_blank(),
+        legend.position = 'none')
+
+
+pdf(file = paste0(indir, 'per_patient_scRNA_QC.pdf'), width = 4, height = 6)
+plot_grid(p1, p2, p3, 
+          ncol = 1, 
+          align = 'v', 
+          rel_heights = c(1, 1, 1.3))
+dev.off()
+
 #---- Bar charts with average cell type distribution
 
 cell.table = data.frame(cell = colnames(sc), condition = sc$condition,
