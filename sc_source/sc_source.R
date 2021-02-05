@@ -58,67 +58,6 @@ run_genesorter = function(sc, assay = 'RNA', slot = 'data', write.file = FALSE, 
 
 
 
-
-#---- Correlation heatmap with meta data
-
-correlation_heatmap = function(object, conditionVector, assay = 'RNA', cellTypeColors = cell.type.colors){
-  suppressPackageStartupMessages(library(ComplexHeatmap))
-  suppressPackageStartupMessages(library(stringr))
-  suppressPackageStartupMessages(library(RColorBrewer))
-  suppressPackageStartupMessages(library(viridis))
-  DefaultAssay(object) = assay
-
-  if(assay == 'RNA'){
-      df = Reduce('rbind', 
-              AverageExpression(object,
-                features = VariableFeatures(object, assay = assay), 
-              assays = assay))
-  }
-
-  if(assay == 'ADT'){
-    # Exclude dextramers in correlation
-      df = Reduce('rbind', 
-              AverageExpression(object, 
-                features = rownames(object)[23:38], assays = assay))
-  }
-
-  df.plot = cor(df)
-
-  # Get meta data
-  condition = str_extract(colnames(df), paste(conditionVector, collapse = '|'))
-  cell.types = gsub(paste0('[[:space:]]?', conditionVector, collapse = '|'), '', colnames(df))
-
-  # Heatmap annotations
-  mat.colors = colorRampPalette(rev(brewer.pal(n = 7, name = 'RdYlBu')))(100)
-  condition.colors = viridis(length(conditionVector))
-  names(condition.colors) = conditionVector
-  ha = HeatmapAnnotation(Condition = condition,
-                        Celltypes = cell.types,
-                        col = list(Condition = condition.colors,
-                                  Celltypes = cellTypeColors),
-                        show_annotation_name = FALSE)
-
-  # Heatmap
-  p = Heatmap(matrix = df.plot,
-             col = mat.colors,
-             name = 'Pearson',
-             show_row_names = FALSE,
-             show_column_names = FALSE,
-             clustering_distance_rows = 'pearson',
-             clustering_distance_columns = 'pearson',
-             clustering_method_columns = 'average',
-             clustering_method_rows = 'average',
-             cluster_rows = cluster_within_group(df.plot, cell.types),
-             cluster_columns = cluster_within_group(df.plot, cell.types),
-             top_annotation = ha)
-  return(p)
-  rm(df)
-  rm(df.plot)
-}
-
-
-
-
 #---- Differential gene expression function for integrated data
 
 get_markers = function(sc, condition, control, cell.type, only.sig = TRUE, adj.pval.cutoff = 0.05, logfc.threshold = 0.25, out.dir = 'diff_genes'){

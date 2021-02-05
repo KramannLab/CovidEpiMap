@@ -193,29 +193,6 @@ dev.off()
 
 
 
-#---- Correlate cell annotations 
-
-sc.subset$integrated_annotations_condition = paste0(sc.subset$integrated_annotations, sc.subset$condition)
-Idents(sc.subset) = 'integrated_annotations_condition'
-
-# RNA
-condition.vector = levels(sc.subset$condition)
-p = correlation_heatmap(object = sc.subset, assay = 'RNA', conditionVector = condition.vector)
-
-pdf(file = paste0(outdir, 'celltype_condition_correlation.pdf'), width = 15, height = 10)
-draw(p)
-dev.off()
-
-
-# ADT
-p = correlation_heatmap(object = sc.subset, assay = 'ADT', conditionVector = condition.vector)
-
-pdf(file = paste0(outdir, 'celltype_condition_correlation_ADT.pdf'), width = 15, height = 10)
-draw(p)
-dev.off()
-
-
-
 #--- Cell-cycle analysis
 
 sc.subset = CellCycleScoring(sc.subset, s.features = cc.genes$s.genes, 
