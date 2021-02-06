@@ -58,6 +58,7 @@ run_genesorter = function(sc, assay = 'RNA', slot = 'data', write.file = FALSE, 
 
 
 
+
 #---- Differential gene expression function for integrated data
 
 get_markers = function(sc, condition, control, cell.type, only.sig = TRUE, adj.pval.cutoff = 0.05, logfc.threshold = 0.25, out.dir = 'diff_genes'){
@@ -117,75 +118,6 @@ top_heatmap = function(sc, markers, cell.type, disease, control, n){
     dev.off()
   }
 }
-
-
-
-
-#---- Cell-type abundance testing
-
-# Source
-# https://www.nxn.se/valent/2020/11/28/s9jjv32ogiplagwx8xrkjk532p7k28
-# Uses integrated annotations!
-get_abundance = function(df, condition.vector){
-  suppressPackageStartupMessages(library(dplyr))
-  suppressPackageStartupMessages(library(ggplot2))
-  suppressPackageStartupMessages(library(tidyverse))
-  suppressPackageStartupMessages(library(ggrepel))
-  suppressPackageStartupMessages(library(emmeans))
-  if(length(condition.vector) > 2) stop('Only two conditions allowed')
-
-  # Prepare linear model
-  data.df = df %>% filter(condition %in% condition.vector)
-  formula = cbind(count, other) ~ integrated_annotations * condition
-  model1 = glm(formula = formula, family = 'binomial', data = data.df)
-
-
-  # Log odds ratios
-  emm1 = emmeans(model1, specs = pairwise ~ condition | integrated_annotations)
-  c_results = emm1$contrasts %>%
-  summary(infer = TRUE, type = 'response') %>%
-    rbind() %>%
-    as.data.frame()
-
-
-  p1 = (
-    ggplot(data = c_results, aes(x = odds.ratio, y = -log10(p.value))) +
-      geom_point() + 
-      geom_text_repel(data = c_results %>% filter(p.value < 1e-50), 
-            aes(label = integrated_annotations)) +
-      scale_x_log10() +
-      theme_minimal() +
-        labs(x = paste0(condition.vector[2], ' / ', condition.vector[1]),
-          title = 'Cell type proportion change')
-    )
-
-
-  # Relate log odds ratios with the average abundace of each cell type
-  emm2 = emmeans(model1, specs = ~ integrated_annotations)
-  mean_probs = emm2 %>%
-  summary(type = 'response') %>%
-  select(integrated_annotations, prob)
-
-  m_results = c_results %>% left_join(mean_probs)
-
-
-  p2 = (
-      ggplot(data = m_results, aes(x = prob, y = odds.ratio, color = p.value < 0.001)) +
-        geom_point() +
-        geom_text_repel(data = m_results %>% filter(abs(log(odds.ratio)) > log(2)), 
-                aes(label = integrated_annotations), 
-                color = 'black') +
-        scale_x_log10() +
-        scale_y_log10() +
-        theme_minimal() +
-        labs(y = paste0(condition.vector[2], ' / ', condition.vector[1], ' (odds ratio)'), 
-          title = 'Cell type proportion change', 
-          x = 'Average abundance (probability)')
-  )
-
-  return(list(p1 = p1, p2 = p2))
-
-  }
 
 
 
