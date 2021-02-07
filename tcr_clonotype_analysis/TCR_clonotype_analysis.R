@@ -26,7 +26,9 @@ sc = subset(sc, integrated_annotations %ni% c('Gamma Delta T cells', 'MAIT cells
 sc$Clonotype = str_c(sc$patient, '_', sc$TCR_clonotype_id)
 
 
-# Compute morisita overlap index of clonotypes with vegan package
+# Compute morisita overlap index of clonotypes between cell types
+# The clonotype call is based on the nucleotide sequences. As the chance of overlap between
+# NT TCR sequences between patients is very small, we just use he clonotype id 
 dm = 1 - as.matrix(vegdist(table(sc$integrated_annotations, sc$Clonotype), method = 'horn'))
 coef_matrix = melt(get_upper_triangle(dm, diag = FALSE), na.rm = TRUE)
 

@@ -9,7 +9,7 @@ source('sc_source/crosstalker_source.R')
 source.folder = '~/sciebo/CovidEpiMap/CrossTalkeR/CrossTalkeR/'
 devtools::load_all(source.folder)
 wkdir = '~/sciebo/CovidEpiMap/CrossTalkeR/'
-indir = 'significant_means/filtered_corrected/'
+indir = 'filtered_corrected/'
 setwd(wkdir)
 
 
@@ -36,7 +36,7 @@ pdf(file = paste0(outdir, 'single_cci_plot_active_mild.pdf'), width = 10, height
 plot_cci(graph = data_active@graphs$CTR,
          colors = cell.type.colors,
          plt_name = '',
-         coords = data@coords[V(data@graphs$CTR)$name,],
+         coords = data_active@coords[V(data_active@graphs$CTR)$name,],
          emax = NULL,
          leg = TRUE,
          low = 0,
@@ -52,7 +52,7 @@ pdf(file = paste0(outdir, 'single_cci_plot_active_severe.pdf'), width = 10, heig
 plot_cci(graph = data_active@graphs$EXP,
          colors = cell.type.colors,
          plt_name = '',
-         coords = data@coords[V(data@graphs$EXP)$name,],
+         coords = data_active@coords[V(data_active@graphs$EXP)$name,],
          emax = NULL,
          leg = TRUE,
          low = 0,
@@ -71,7 +71,7 @@ pdf(file = paste0(outdir, 'differential_cci_plot.pdf'), width = 10, height = 10)
 plot_cci(graph = data_active@graphs$EXP_x_CTR,
          colors = cell.type.colors,
          plt_name = '',
-         coords = data@coords[V(data@graphs$EXP_x_CTR)$name,],
+         coords = data_active@coords[V(data_active@graphs$EXP_x_CTR)$name,],
          emax = NULL,
          leg = TRUE,
          low = 0,
@@ -109,7 +109,7 @@ outdir = 'active_mild_vs_active_severe/'
 targets = c('MICB', 'IFNG')
 
 for (target in targets){
-  pdf(file = paste0(outdir, 'sankey_', target, '.pdf'), width = 10, height = 5)
+  pdf(file = paste0(outdir, 'sankey_', target, '.pdf'), width = 10, height = 4)
   print(plot_sankey(data = data_active@tables$EXP_x_CTR, target = target))
   dev.off()
 }
@@ -118,7 +118,7 @@ for (target in targets){
 outdir = 'recovered_mild_vs_recovered_severe/'
 target = 'SELL'
 
-pdf(file = paste0(outdir, 'sankey_', target, '.pdf'), width = 10, height = 5)
+pdf(file = paste0(outdir, 'sankey_', target, '.pdf'), width = 10, height = 4)
 plot_sankey(data = data_recov@tables$EXP_x_CTR, target = target)
 dev.off()
 

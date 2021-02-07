@@ -146,7 +146,8 @@ plot_sankey = function(data, target){
           axis.line = element_blank(),
           axis.title.y = element_blank(), 
           axis.text.y = element_blank()) +
-    scale_fill_viridis_d()
+    scale_fill_manual(values = c('Up' = viridis(2)[2],
+                      'Down' = viridis(2)[1]))
   
   return(p)
 }
