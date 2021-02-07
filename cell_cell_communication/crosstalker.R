@@ -106,13 +106,12 @@ dev.off()
 
 # Active mild vs active severe
 outdir = 'active_mild_vs_active_severe/'
-targets = c('MICB', 'IFNG')
+target = 'MICB'
 
-for (target in targets){
-  pdf(file = paste0(outdir, 'sankey_', target, '.pdf'), width = 10, height = 4)
-  print(plot_sankey(data = data_active@tables$EXP_x_CTR, target = target))
-  dev.off()
-}
+pdf(file = paste0(outdir, 'sankey_', target, '.pdf'), width = 10, height = 4)
+plot_sankey(data = data_active@tables$EXP_x_CTR, target = target)
+dev.off()
+
 
 # Recovered mild vs recovered severe
 outdir = 'recovered_mild_vs_recovered_severe/'

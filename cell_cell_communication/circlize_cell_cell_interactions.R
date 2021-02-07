@@ -12,7 +12,7 @@ library(ComplexHeatmap)
 source('sc_source/sc_source.R')
 indir = '~/sciebo/CovidEpiMap/CrossTalkeR/active_mild_vs_active_severe/'
 outdir = '~/sciebo/CovidEpiMap/cell_cell_interaction/'
-condition = 'active_mild'
+condition = 'active_severe'
 
 
 # Define selected interactions
@@ -31,8 +31,10 @@ names(cell.types) = c('TN', 'TCM', 'Treg',
                       'TEM2', 'Tcyc', 'NK TEFF',
                       'NKTatyp', 'MAIT', 'GDT')
 
+
 # Read data
-data = read.table(file = paste0(indir, 'single_', condition, '.txt'), sep = '\t', header = TRUE)
+data = read.csv(file = paste0(indir, 'single_', condition, '.csv'), header = TRUE)
+data$X = NULL
 data$Ligand.Cluster = names(cell.types[match(data$Ligand.Cluster, cell.types)])
 data$Receptor.Cluster = names(cell.types[match(data$Receptor.Cluster, cell.types)])
 data$from_type = paste(data$Ligand.Cluster, 'L', sep = ':')
@@ -76,6 +78,7 @@ lr.sectors = c('TN:L', 'TN:R',
                'NKTatyp:L', 'NKTatyp:R', 
                'MAIT:L', 'MAIT:R',
                'GDT:L', 'GDT:R')
+
 n.lr.sectors = length(lr.sectors)
 
 # Define widths for inner track
@@ -85,6 +88,7 @@ lr.width = c(ml, mr)
 
 
 # Define colors for outer track
+# Exclude TEX
 cell.type.colors = cell.type.colors[-11]
 names(cell.type.colors) = names(cell.types)
 
