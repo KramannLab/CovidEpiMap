@@ -529,3 +529,52 @@ upper_trig_tile_plot = function(matrix, text_size = 2){
   return(p)
 }
 
+
+
+
+#---- Plot condition across pseudotime
+
+pseudo_density = function(data, x){
+  suppressPackageStartupMessages(library(ggplot2))
+  suppressPackageStartupMessages(library(viridis))
+  suppressPackageStartupMessages(library(cowplot))
+  
+  # Density
+  p1 = ggplot() + 
+    geom_density(data = data, 
+                 aes(x = !!sym(x), 
+                     group = condition, 
+                     fill = condition), 
+                 alpha = 0.5, 
+                 adjust = 2) +
+    scale_fill_manual(values = viridis(length(unique(data$condition))), 
+                      name = 'Condition') +
+    theme_cowplot() +
+    theme(axis.ticks = element_blank(),
+          axis.text.x = element_blank()) +
+    labs(x = 'Pseudotime',
+         y = 'Density')
+  
+  # Cell ordering
+  p2 = ggplot() +
+    geom_point(data = data, 
+               aes(x = seq_along(!!sym(x)), 
+                   y = !!sym(x), 
+                   colour = integrated_annotations),
+               size = 0.5) +
+    scale_colour_manual(values = cell.type.colors) +
+    coord_flip() +
+    theme_void() +
+    NoLegend()
+  
+  # Order plots
+  empty_plot = plot(0, type = 'n', axes = FALSE, ann = FALSE)
+  l = get_legend(p1)
+  top_row = plot_grid(empty_plot, p2, empty_plot, align = 'h', axis = 'l', ncol = 3, rel_widths = c(1,7.4,2.3))
+  bottom_row = plot_grid(p1 + NoLegend(), l, align = 'h', axis = 'l', ncol = 2, rel_widths = c(4,1))
+  
+  # Plot
+  p = plot_grid(top_row, bottom_row, ncol = 1, rel_heights = c(1/16, 15/16))
+  return(p)
+}
+

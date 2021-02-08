@@ -46,7 +46,7 @@ for (condition in conditions){
 
 
 
-#---- Plot CellPhoneDB results
+#---- Plot CellPhoneDB results (From Eleanor Fewings)
 
 condition = 'active_severe'
 

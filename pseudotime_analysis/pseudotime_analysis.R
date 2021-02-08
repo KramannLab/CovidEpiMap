@@ -5,7 +5,6 @@
 #---- Pseudotime analysis on T cell sub-populations with Slingshot and tradeSeq
 
 #devtools::install_github("statOmics/tradeSeq", ref = "fastFitting")
-#devtools::install_github("kstreet13/bioc2020trajectories")
 library(tradeSeq)
 library(Seurat)
 library(slingshot)
@@ -52,7 +51,6 @@ sds = slingshot(Embeddings(sc.subset, reduction), clusterLabels = Idents(sc.subs
 sc.subset@tools[['slingshot']] = SlingshotDataSet(sds)
 
 
-
 # Plot slingshot curves
 pseudotime = slingPseudotime(sds)
 curves = colnames(pseudotime)
@@ -93,118 +91,57 @@ dev.off()
 
 
 
-#---- Plot condition density along pseudotime
+#---- Condition density along pseudotime 
 
 df = sc.subset@meta.data
-df = df[df$condition %ni% 'healthy',]
 df$integrated_annotations = factor(df$integrated_annotations, 
                                     levels = names(cell.type.colors))
 
-# Lineage 1
-# Density
-p1 = ggplot() + 
-geom_density(data = df, 
-            aes(slingshot_pseudotime_curve1, group = condition_collapsed, 
-                fill = condition_collapsed), 
-            alpha = 0.5, 
-            adjust = 2) +
-scale_fill_manual(values = viridis(2), name = 'Condition') +
-theme_classic() +
-xlab('Pseudotime (Lineage 1)') +
-ylab('Density')
+# Active mild and severe conditions
+p1 = pseudo_density(data = df %>% 
+                   filter(condition %in% c('active_mild', 'active_severe')), 
+                 x = 'slingshot_pseudotime_curve1')
+p2 = pseudo_density(data = df %>% 
+                      filter(condition %in% c('active_mild', 'active_severe')), 
+                    x = 'slingshot_pseudotime_curve2')
 
-# Cell ordering
-p2 = ggplot() +
-geom_point(aes(x = seq_along(df$slingshot_pseudotime_curve1), 
-          y = df$slingshot_pseudotime_curve1, 
-          colour = df$integrated_annotations),
-    size = 0.5) +
-scale_colour_manual(values = cell.type.colors) +
-coord_flip() +
-theme_void() +
-NoLegend()
-
-
-empty_plot = plot(0,type = 'n', axes = FALSE, ann = FALSE)
-l = get_legend(p1)
-top_row = plot_grid(empty_plot, p2, empty_plot, align = 'h', axis = 'l', ncol = 3, rel_widths = c(1,7.4,2.3))
-bottom_row = plot_grid(p1 + NoLegend(), l, align = 'h', axis = 'l', ncol = 2, rel_widths = c(4,1))
-
-pdf(file = paste0(outdir, 'integrated_Tcells_condition_lineage1_density.pdf'))
-plot_grid(top_row, bottom_row, ncol = 1, rel_heights = c(1/16, 15/16))
+pdf(file = paste0(outdir, 'integrated_Tcells_density_active.pdf'), width = 5, height = 5)
+p1
+p2
 dev.off()
 
 
-# Lineage 2
-# Density
-p1 = ggplot() + 
-geom_density(data = df, 
-            aes(slingshot_pseudotime_curve2, group = condition_collapsed, 
-                fill = condition_collapsed), 
-            alpha = 0.5, 
-            adjust = 2) +
-scale_fill_manual(values = viridis(2), name = 'Condition') +
-theme_classic() +
-xlab('Pseudotime (Lineage 2)') +
-ylab('Density')
+# Healthy, recovered mild and recovered severe
+p1 = pseudo_density(data = df %>% 
+                 filter(condition %in% c('healthy', 'recovered_mild', 'recovered_severe')), 
+               x = 'slingshot_pseudotime_curve1')
+p2 = pseudo_density(data = df %>% 
+                      filter(condition %in% c('healthy', 'recovered_mild', 'recovered_severe')), 
+                    x = 'slingshot_pseudotime_curve2')
 
-# Cell ordering
-p2 = ggplot() +
-geom_point(aes(x = seq_along(df$slingshot_pseudotime_curve2), 
-          y=df$slingshot_pseudotime_curve2, 
-          colour = df$integrated_annotations),
-    size = 0.5) +
-scale_colour_manual(values = cell.type.colors) +
-coord_flip() +
-theme_void() +
-NoLegend()
-
-
-l = get_legend(p1)
-top_row = plot_grid(empty_plot, p2, empty_plot, align = 'h', axis = 'l', ncol = 3, rel_widths = c(1,7.4,2.3))
-bottom_row = plot_grid(p1 + NoLegend(), l, align = 'h', axis = 'l', ncol = 2, rel_widths = c(4,1))
-
-pdf(file = paste0(outdir, 'integrated_Tcells_condition_lineage2_density.pdf'))
-plot_grid(top_row, bottom_row, ncol = 1, rel_heights = c(1/16, 15/16))
+pdf(file = paste0(outdir, 'integrated_Tcells_density_healthy_recovered.pdf'), width = 6, height = 5)
+p1
+p2
 dev.off()
 
 
-# Test difference in condition densitiy along pseudotime (severe vs mild)
-df = sc.subset@meta.data
-df = df[df$condition %ni% 'healthy',]
-df$condition_collapsed = droplevels(df$condition_collapsed)
+# Test difference in condition densitiy along pseudotime (active mild vs severe)
+df = df %>% 
+  filter(condition %in% c('active_mild', 'active_severe'))
+df$condition = droplevels(df$condition)
 
-# Kolmogorov-Smirnof method to test differenc ein distribution 
+# Kolmogorov-Smirnof method to test difference in distribution 
 # Use this method over Wilcoxon rank test as it is more sensitive to shape changes in distribution
 # and ours appear to be bimodal.
 
-# Lineage 1 (p < 2.2e-16, D = 0.248)
-ks.test(df[df$condition_collapsed == 'mild','slingshot_pseudotime_curve1'],
-        df[df$condition_collapsed == 'severe','slingshot_pseudotime_curve1'])
-# Lineage 2 (p < 2.2e-16, D = 0.28651)
-ks.test(df[df$condition_collapsed == 'mild','slingshot_pseudotime_curve2'],
-        df[df$condition_collapsed == 'severe','slingshot_pseudotime_curve2'])
+# Lineage 1 (p < 2.2e-16, D = 0.30905)
+ks.test(df[df$condition == 'active_mild','slingshot_pseudotime_curve1'],
+        df[df$condition == 'active_severe','slingshot_pseudotime_curve1'])
 
 
-
-#--- Check for imbalance in local distribution of cells according to condition
-
-scores = bioc2020trajectories::imbalance_score(
-  rd = reducedDims(sds),
-  cl = sc.subset$condition,
-  k = 20, smooth = 40)
-
-grad = viridis::plasma(10, begin = 0, end = 1)
-names(grad) = levels(cut(scores$scaled_scores, breaks = 10))
-
-pdf(file = paste0(outdir, 'integrated_Tcells_condition_cell_distribution.pdf'))
-plot(reducedDims(sds), 
-        col = grad[cut(scores$scaled_scores, breaks = 10)],
-        asp = 1, pch = 16, cex = .8, 
-        xlab = 'UMAP-1', ylab = 'UMAP-2')
-legend('topright', legend = names(grad), 
-        col = grad, pch = 16, bty = 'n', cex = 2 / 3)
-dev.off()
+# Lineage 2 (p < 2.2e-16, D = 0.40257)
+ks.test(df[df$condition == 'active_mild','slingshot_pseudotime_curve2'],
+        df[df$condition == 'active_severe','slingshot_pseudotime_curve2'])
 
 
 
