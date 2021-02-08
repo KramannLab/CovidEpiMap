@@ -124,31 +124,7 @@ for (patient in patients){
 	}
 	dev.off()
 
-
-
-	# Get gene specificity score and conditionial probability of expression per cluster
-	# Use for cluster annotations
-	sg = run_genesorter(sc, write.file = TRUE, file.name.prefix = sample)
-
-
-
-	# Dotplot of top 10 genes per cluster based on specificity score
-	sg = sg$specScore
-	genes = list()
-	n = 10
-	for (i in 1:ncol(sg)){
-		genes[[i]] = rownames(head(sg[order(sg[,i], decreasing = TRUE),], n))
-	}
-	top.genes = unique(unlist(genes))
-
-	height = length(top.genes) * 0.2
-	width = length(levels(Idents(sc))) * 0.5
-	pdf(file = paste0(outdir, sample, '_GeneSorterTop10.pdf'),
-		height = height, width = width)
-	print(DotPlot(sc, features = rev(top.genes), assay = 'RNA') + coord_flip())
-	dev.off()
-
-
+	
 
 	# Top 5 differentially expressed genes per cluster
 	sc.markers = FindAllMarkers(sc, assay = 'RNA', only.pos = TRUE, min.pct = 0.25)
@@ -235,5 +211,4 @@ for (patient in patients){
 	sc = AddMetaData(object = sc, metadata = vdj)
 	saveRDS(sc, file = paste0(indir, sample, '.rds'))
 }
-
 

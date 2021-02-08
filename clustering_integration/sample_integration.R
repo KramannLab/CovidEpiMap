@@ -68,6 +68,7 @@ sc$condition = condition.table[sc$orig.ident, 'condition']
 
 
 #---- Visualize counts from ADT library (dextramer + CITE seq)
+
 DefaultAssay(sc) = 'ADT'
 sc = ScaleData(sc, verbose = FALSE, features = rownames(sc))
 markers = rownames(sc[['ADT']])
@@ -243,5 +244,4 @@ dev.off()
 #---- Save data
 
 saveRDS(sc.subset, file = 'integrated.RNA.Tcells.annotated.rds')
-
 

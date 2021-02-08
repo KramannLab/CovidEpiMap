@@ -23,42 +23,6 @@ cell.type.colors = c('CD8+ naive T cells' = '#f58231',
 
 
 
-#---- Genesorter
-
-run_genesorter = function(sc, assay = 'RNA', slot = 'data', write.file = FALSE, out.dir = '.', file.name.prefix = NULL){
-  
-  # Get specificity score (specScore) and conditional probability of expression (condGeneProb)
-  library(genesorteR, quietly = TRUE)
-  sg = sortGenes(GetAssayData(sc, assay = assay, slot = slot), Idents(sc))
-  return.list = c('specScore' = sg$specScore, 'condGeneProb' = sg$condGeneProb)
-
-  # Write files
-  if(write.file){
-    if(!dir.exists(file.path(out.dir))) stop('out.dir does not exist')
-
-    # specScore
-    specScore = as.data.frame(sg$specScore)
-    specScore$gene = rownames(specScore)
-    specScore = specScore[,c(ncol(specScore), 1:ncol(specScore)-1)]
-    write.table(specScore, 
-      file = paste0(out.dir, '/', file.name.prefix, 'specScore.txt'), 
-      sep = '\t', quote = FALSE, row.names = FALSE)
-
-    # condGeneProb
-    condGeneProb = as.data.frame(sg$condGeneProb)
-    condGeneProb$gene = rownames(condGeneProb)
-    condGeneProb = condGeneProb[,c(ncol(condGeneProb), 1:ncol(condGeneProb)-1)]
-    write.table(condGeneProb, 
-      file =  paste0(out.dir, '/', file.name.prefix, 'condGeneProb.txt'), 
-      sep = '\t', quote = FALSE, row.names = FALSE)
-  }
-
-  return(return.list)
-}
-
-
-
-
 #---- Differential gene expression function for integrated data
 
 get_markers = function(sc, condition, control, cell.type, only.sig = TRUE, adj.pval.cutoff = 0.05, logfc.threshold = 0.25, out.dir = 'diff_genes'){
