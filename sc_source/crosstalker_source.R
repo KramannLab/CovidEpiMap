@@ -127,7 +127,7 @@ plot_rank = function(all_data){
 #---- Sankey plots of interactions from CrossTalkeR
 
 plot_sankey = function(data, target){
-  data = data[grep(target, data$allpair),]
+  data = data[grep(paste(target, collapse = '|'), data$allpair),]
   data$Expression = ifelse(data$MeanLR > 0, 'Up', 'Down')
   data$AbsMeanLR = abs(data$MeanLR)
   

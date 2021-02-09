@@ -111,6 +111,8 @@ plot_grid(p1, p2, p3,
           rel_heights = c(1, 1, 1.3))
 dev.off()
 
+
+
 #---- Bar charts with average cell type distribution
 
 cell.table = data.frame(cell = colnames(sc), condition = sc$condition,
