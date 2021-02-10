@@ -4,7 +4,6 @@
 
 #---- TF activity inference with DoRothEA and pathway activity inference with PROGENy
 
-#devtools::install_github('saezlab/progeny')
 library(progeny)
 library(dorothea)
 library(dplyr)

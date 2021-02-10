@@ -12,7 +12,7 @@ library(ComplexHeatmap)
 source('sc_source/sc_source.R')
 indir = '~/sciebo/CovidEpiMap/CrossTalkeR/active_mild_vs_active_severe/'
 outdir = '~/sciebo/CovidEpiMap/cell_cell_interaction/'
-condition = 'active_severe'
+condition = 'active_mild'
 
 
 # Define selected interactions
@@ -24,12 +24,14 @@ names(interactions) = c('HLA-E', 'HLA-E',
                         'MICB', 'HLA-E',
                         'HLA-F','KIR2DL1', 'KIR2DL3')
 
-# Get abbreviated cell type names for plotting (remove TEX)
-cell.types = names(cell.type.colors[-11])
+# Get abbreviated cell type names for plotting
+cell.types = names(cell.type.colors)
 names(cell.types) = c('TN', 'TCM', 'Treg',
                       'TEMRA', 'NK TEMRA', 'TEM1',
                       'TEM2', 'Tcyc', 'NK TEFF',
-                      'NKTatyp', 'MAIT', 'GDT')
+                      'NKTatyp', 'TEX', 'MAIT', 'GDT')
+cell.type.colors.2 = cell.type.colors
+names(cell.type.colors.2) = names(cell.types)
 
 
 # Read data
@@ -48,10 +50,10 @@ sub = paste(data$to, data$from, sep = ':') %in% paste(interactions, names(intera
 subset = data[sub,]
 
 
-# Get number of outer sections (cell types)
-sectors = names(cell.types)
+# Get number of outer sections (cell types) and order
+sectors = unique(c(data$ligand.cluster, data$receptor.cluster))
+sectors = names(cell.types)[names(cell.types) %in% sectors]
 nsectors = length(sectors)
-
 
 # Define  width for cell types in outer track based on total meanlr values
 meanl = subset %>% dplyr::group_by(ligand.cluster) %>% summarize(meanl = sum(value))
@@ -65,20 +67,9 @@ width = tapply(mlr, names(mlr), sum)
 
 
 # Get number of inner sections (ligand/receptor) and order 
-#table(c(subset$from_type, subset$to_type))
-lr.sectors = c('TN:L', 'TN:R', 
-               'TCM:L', 'TCM:R',
-               'Treg:L', 'Treg:R',
-               'TEMRA:L', 'TEMRA:R', 
-               'NK TEMRA:L', 'NK TEMRA:R', 
-               'TEM1:L', 'TEM1:R', 
-               'TEM2:L', 'TEM2:R', 
-               'Tcyc:L', 'Tcyc:R',
-               'NK TEFF:L', 'NK TEFF:R',
-               'NKTatyp:L', 'NKTatyp:R', 
-               'MAIT:L', 'MAIT:R',
-               'GDT:L', 'GDT:R')
-
+lr.sector.order = paste0(rep(sectors, each = 2), c(':L', ':R'))
+lr.sectors = names(table(c(subset$from_type, subset$to_type)))
+lr.sectors = lr.sector.order[lr.sector.order %in% lr.sectors]
 n.lr.sectors = length(lr.sectors)
 
 # Define widths for inner track
@@ -88,9 +79,7 @@ lr.width = c(ml, mr)
 
 
 # Define colors for outer track
-# Exclude TEX
-cell.type.colors = cell.type.colors[-11]
-names(cell.type.colors) = names(cell.types)
+cell.type.colors.outer = cell.type.colors.2[names(cell.type.colors.2) %in% sectors]
 
 # Define colors for inner track
 lr.sector.colors = ifelse(grepl(':R', lr.sectors, fixed = TRUE), viridis(3)[1], viridis(3)[2])
@@ -121,20 +110,31 @@ tracks = function(){
   gap = 5
   minigap = 0.7
   circos.par(gap.degree = gap)
-  circos.initialize(sectors = sectors, xlim = cbind(rep(0, nsectors), width))
+  circos.initialize(sectors = sectors, xlim = cbind(rep(0, nsectors), width[sectors]))
   circos.track(sectors = sectors, 
                ylim = c(0,1),
                track.height = mm_h(8), 
-               bg.col = cell.type.colors,
+               bg.col = cell.type.colors.outer,
                bg.border = NA)
   
   # Inner track
   circos.clear()
   par(new = TRUE)
-  gaps = rep(c(minigap, gap), n.lr.sectors/2)
+  
+  # Define gaps of inner track
+  gaps = c()
+  for (cell.type in sectors){
+    if (sum(grepl(paste0(paste0('^', cell.type, c(":L", ":R")), collapse = '|'), lr.sectors)) == 2){
+      gaps = c(gaps, c(minigap, gap))
+    } else{
+      gaps = c(gaps, gap)
+      print(cell.type)
+    }
+  }
+  
   circos.par('canvas.xlim' = c(-1.15, 1.15), 'canvas.ylim' = c(-1.15, 1.15), gap.degree = gaps,
              cell.padding = c(0.02, 0, 0.02, 0))
-  circos.initialize(sectors = lr.sectors, xlim = cbind(rep(0, n.lr.sectors), lr.width))
+  circos.initialize(sectors = lr.sectors, xlim = cbind(rep(0, n.lr.sectors), lr.width[lr.sectors]))
   circos.track(sectors = lr.sectors, 
                ylim = c(0,1),
                track.height = mm_h(8),

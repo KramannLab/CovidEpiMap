@@ -90,6 +90,7 @@ for (clonotype in clonotypes){
 dev.off()
 
 
+
 #---- Average percent A0101-2 binding cells per group/cell type
   
 dex.cells = colnames(dex.subset)
@@ -157,25 +158,13 @@ ggplot(df.plot, aes(x = integrated_annotations, y = frac)) +
 dev.off()
 
 
-# Wilcoxon rank sum test per cell type (none significant)
+# Wilcoxon rank sum test per cell type (non-significant)
 df.1 = df %>% filter(integrated_annotations == 'CD8+ TEMRA cells' &
                        unique_binders == 'unique_binder')
 wilcox.test(df.1$frac ~ df.1$condition_collapsed)
 df.2 = df %>% filter(integrated_annotations == 'CD8+ effector memory T cells 1' &
                        unique_binders == 'unique_binder')
 wilcox.test(df.2$frac ~ df.2$condition_collapsed)
-
-
-
-#---- Plot clonal expansion of non-binding cells
-
-non.binders = subset(sc, A0201_5 == 'NO' & A1101_30 == 'NO' & A0201_6 == 'NO' & 
-					A0101_2 == 'NO' & A1101_29 == 'NO' & A1101_23 == 'NO' & 
-					A0201_4 == 'NO' & A0201_12 == 'NO')
-
-pdf(file = paste0(outdir, 'clonal_expansion_non_binding_cells.pdf'))
-FeaturePlot(non.binders, feature = 'clonotype_size', cols = c('yellow', 'red'), order = TRUE)
-dev.off()
 
 
 
@@ -239,116 +228,7 @@ dev.off()
 
 
 
-#---- A0101-2 binding vs non-binding cells (active severe)
-
-# Only evaluate cell types with >200 binding cells in each group and
-# representation from at least 2 patients
-cell.types = c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1',
-				'CD8+ effector memory T cells 2')
-
-for (cell.type in cell.types){
-	binding = colnames(subset(dex.subset, condition == 'active_severe' & integrated_annotations == cell.type))
-	non.binding = colnames(subset(sc, condition == 'active_severe' & integrated_annotations == cell.type & A0101_2 == 'NO'))
-	subset = subset(sc, cells = c(binding, non.binding))
-	Idents(subset) = 'A0101_2'
-
-
-	# DGEA
-	markers = FindMarkers(subset, ident.1 = 'YES', ident.2 = 'NO', logfc.threshold = 0)
-	markers = markers[order(markers$avg_log2FC, decreasing = TRUE),]
-
-	# Write to file
-	markers.out = markers[markers$p_val_adj < 0.05,]
-	markers.out$gene = rownames(markers.out)
-	cell.type.name = gsub(' ', '_', cell.type)
-
-	file.prefix = paste0('active_severe_', cell.type.name, '_binding_vs_nonbinding')
-	write.table(markers.out[,c(6, 1:5)], 
-			file = paste0(outdir, file.prefix, '_dge.txt'), 
-			sep = '\t',
-			row.names = FALSE, 
-			quote = FALSE)
-
-
-	# GSEA
-	stats = markers$avg_log2FC
-	names(stats) = rownames(markers)
-	stats = stats[!is.na(stats)]
-
-	# GO
-	run_gsea(bg.genes = bg.genes, stats = stats, 
-			category = 'C5', subcategory = 'BP',
-			out.dir = outdir, plot.title = 'GO',
-			file.prefix = file.prefix, n = 40)
-
-	# PID
-	run_gsea(bg.genes = bg.genes, stats = stats, 
-			category = 'C2', subcategory = 'PID',
-			out.dir = outdir, plot.title = 'PID',
-			file.prefix = file.prefix)
-
-	# Immunological signature
-	run_gsea(bg.genes = bg.genes, stats = stats, 
-			category = 'C7',
-			out.dir = outdir, plot.title = 'Immunological Signature',
-			file.prefix = file.prefix)
-}
-
-
-
-#---- A0101-2 binding recovered severe vs recovered mild
-
-cell.types = c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1')
-
-for (cell.type in cell.types){
-	subset = subset(dex.subset, integrated_annotations == cell.type)
-	Idents(subset) = 'condition'
-
-	# DGEA
-	markers = FindMarkers(subset, ident.1 = 'recovered_severe', 
-						ident.2 = 'recovered_mild', logfc.threshold = 0)
-	markers = markers[order(markers$avg_log2FC, decreasing = TRUE),]
-
-	# Write to file
-	markers.out = markers[markers$p_val_adj < 0.05,]
-	markers.out$gene = rownames(markers.out)
-	cell.type.name = gsub(' ', '_', cell.type)
-
-	file.prefix = paste0(cell.type.name, '_A0101-2_binding_recovered_severe_vs_recovered_mild')
-	write.table(markers.out[,c(6, 1:5)], 
-			file = paste0(outdir, file.prefix, '_dge.txt'), 
-			sep = '\t',
-			row.names = FALSE, 
-			quote = FALSE)
-
-
-	# GSEA
-	stats = markers$avg_log2FC
-	names(stats) = rownames(markers)
-	stats = stats[!is.na(stats)]
-
-	# GO
-	run_gsea(bg.genes = bg.genes, stats = stats, 
-			category = 'C5', subcategory = 'BP',
-			out.dir = outdir, plot.title = 'GO',
-			file.prefix = file.prefix, n = 40)
-
-	# PID
-	run_gsea(bg.genes = bg.genes, stats = stats, 
-			category = 'C2', subcategory = 'PID',
-			out.dir = outdir, plot.title = 'PID',
-			file.prefix = file.prefix)
-
-	# Immunological signature
-	run_gsea(bg.genes = bg.genes, stats = stats, 
-			category = 'C7',
-			out.dir = outdir, plot.title = 'Immunological Signature',
-			file.prefix = file.prefix)
-}
-
-
-
-#---- A0101-2 binding severe vs mild
+#---- A0101-2 binding analysis (severe vs mild)
 
 cell.types = c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1')
 
@@ -385,10 +265,10 @@ for (cell.type in cell.types){
 			out.dir = outdir, plot.title = 'GO',
 			file.prefix = file.prefix, n = 40)
 
-	# PID
+	# C5
 	run_gsea(bg.genes = bg.genes, stats = stats, 
-			category = 'C2', subcategory = 'PID',
-			out.dir = outdir, plot.title = 'PID',
+			category = 'C2',
+			out.dir = outdir,
 			file.prefix = file.prefix)
 
 	# Immunological signature
@@ -396,33 +276,5 @@ for (cell.type in cell.types){
 			category = 'C7',
 			out.dir = outdir, plot.title = 'Immunological Signature',
 			file.prefix = file.prefix)
-}
-
-
-
-#---- Epitope non-binding cells severe vs mild
-
-cell.types = c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1')
-
-for (cell.type in cell.types){
-  subset = subset(non.binders, integrated_annotations == cell.type)
-  Idents(subset) = 'condition_collapsed'
-  
-  # DGEA
-  markers = FindMarkers(subset, ident.1 = 'severe', 
-                        ident.2 = 'mild', logfc.threshold = 0)
-  markers = markers[order(markers$avg_log2FC, decreasing = TRUE),]
-  
-  # Write to file
-  markers.out = markers[markers$p_val_adj < 0.05,]
-  markers.out$gene = rownames(markers.out)
-  cell.type.name = gsub(' ', '_', cell.type)
-  
-  file.prefix = paste0(cell.type.name, '_non_binding_severe_vs_mild')
-  write.table(markers.out[,c(6, 1:5)], 
-              file = paste0(outdir, file.prefix, '_dge.txt'), 
-              sep = '\t',
-              row.names = FALSE, 
-              quote = FALSE)
 }
 
