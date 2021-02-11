@@ -12,17 +12,19 @@ library(ComplexHeatmap)
 source('sc_source/sc_source.R')
 indir = '~/sciebo/CovidEpiMap/CrossTalkeR/active_mild_vs_active_severe/'
 outdir = '~/sciebo/CovidEpiMap/cell_cell_interaction/'
-condition = 'active_mild'
+condition = 'active_severe'
 
 
 # Define selected interactions
 interactions = c('CD94:NKG2A', 'CD94:NKG2C', 
                  'NKG2D II receptor', 'CD94:NKG2E',
-                 'KIR3DL2','HLA-C', 'HLA-C')
+                 'KIR3DL2','HLA-C', 'HLA-C',
+                 'CLEC2B', 'KLRB1')
 
 names(interactions) = c('HLA-E', 'HLA-E',
                         'MICB', 'HLA-E',
-                        'HLA-F','KIR2DL1', 'KIR2DL3')
+                        'HLA-F','KIR2DL1', 'KIR2DL3',
+                        'KLRF1', 'CLEC2D')
 
 # Get abbreviated cell type names for plotting
 cell.types = names(cell.type.colors)
@@ -86,22 +88,36 @@ lr.sector.colors = ifelse(grepl(':R', lr.sectors, fixed = TRUE), viridis(3)[1], 
 names(lr.sector.colors) = lr.sectors  
 
 # Define colors for links
+# Activating (warm colors)
 yellow = rgb(255, 255, 51, alpha = 200, max = 255) # HLA-E > CD94:NKG2C
 darkred = rgb(139, 0, 0, alpha = 200, max = 255) # MICB > NKG2D II receptor
 pink = rgb(255, 182, 193, alpha = 200, max = 255) # HLA-E > CD94:NKG2E
+orange = rgb(255, 165, 0, alpha = 200, max = 255) # KLRF1 > CLEC2B
+# Inhibiting (cold colors)
 lavender = rgb(202, 185, 241, alpha = 200, max = 255) # HLA-E > CD94:NKG2A
 darkblue = rgb(0, 0, 88, alpha = 200, max = 255) # HLA-F > KIR3DL2
 purple = rgb(128, 0, 128, alpha = 200, max = 255) # KIR2DL1 > HLA-C
 indigo = rgb(75, 0, 130, alpha = 200, max = 255) # KIR2DL3 > HLA-C
+blue = rgb(0, 0, 255, alpha = 200, max = 255) # CLEC2D > KLRB1
 
-interaction.colors = c(yellow, darkred, pink, lavender, darkblue, purple, indigo)
+interaction.colors = c(yellow, 
+                       darkred, 
+                       pink, 
+                       orange,
+                       lavender, 
+                       darkblue, 
+                       purple, 
+                       indigo, 
+                       blue)
 names(interaction.colors) = c('HLA-E:CD94:NKG2C',
                               'MICB:NKG2D II receptor',
                               'HLA-E:CD94:NKG2E',
+                              'KLRF1:CLEC2B',
                               'HLA-E:CD94:NKG2A',
                               'HLA-F:KIR3DL2',
                               'KIR2DL1:HLA-C',
-                              'KIR2DL3:HLA-C')
+                              'KIR2DL3:HLA-C',
+                              'CLEC2D:KLRB1')
 
 # Function to plot outer and inner track
 tracks = function(){
@@ -150,15 +166,25 @@ lr.legend = Legend(at = c('Ligand', 'Receptor'),
                    title_position = 'topleft', 
                    title = 'Inner Track')
 
-link.legend = Legend(at = c('HLA-E - CD94:NKG2C', 'MICB - NKG2D II receptor',
-                            'HLA-E - CD94:NKG2E', 'HLA-E - CD94:NKG2A',
-                            'HLA-F - KIR3DL2', 'HLA-C - KIR2DL1',
-                            'HLA-C - KIR2DL3'),
+link.legend = Legend(at = c('HLA-E - CD94:NKG2C', 
+                            'MICB - NKG2D II receptor',
+                            'HLA-E - CD94:NKG2E',
+                            'KLRF1 - CLEC2B',
+                            'HLA-E - CD94:NKG2A',
+                            'HLA-F - KIR3DL2', 
+                            'HLA-C - KIR2DL1',
+                            'HLA-C - KIR2DL3',
+                            'CLEC2D - KLRB1'),
                      type = 'grid',
-                     legend_gp = gpar(fill = c(yellow, darkred,
-                                               pink, lavender,
-                                               darkblue, purple,
-                                               indigo)),
+                     legend_gp = gpar(fill = c(yellow, 
+                                               darkred,
+                                               pink,
+                                               orange,
+                                               lavender,
+                                               darkblue, 
+                                               purple,
+                                               indigo,
+                                               blue)),
                      title_position = 'topleft',
                      title = 'Ligand - Receptor interaction')
 
