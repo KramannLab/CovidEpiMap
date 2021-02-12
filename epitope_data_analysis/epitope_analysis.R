@@ -50,10 +50,11 @@ dex.subset = subset(sc, A0201_5 == 'NO' & A1101_30 == 'NO' & A0201_6 == 'NO' &
 
 saveRDS(dex.subset, file = paste0(indir, 'A0101-2.unique.binders.rds'))
 
-pdf(file = paste0(outdir, 'integrated_Tcells_dextramer_A0101-2_unique_binding.pdf'))
+pdf(file = paste0(outdir, 'integrated_Tcells_dextramer_A0101-2_unique_binding.pdf'), width = 8.3)
 DimPlot(sc, cells.highlight = colnames(dex.subset),
-		cols.highlight = viridis(1), 
-		sizes.highlight = 0.1)
+		cols.highlight = viridis(2)[1], 
+		sizes.highlight = 0.1,
+		cols = viridis(2)[2])
 dev.off()
 
 
@@ -65,7 +66,7 @@ df = dex.subset@meta.data
 
 clonotypes = df %>% 
   group_by(patient_clonotype) %>% 
-  count(name = 'clonotype_size') %>% 
+  dplyr::count(name = 'clonotype_size') %>% 
   arrange(desc(clonotype_size)) %>% 
   head(5)
 clonotypes = clonotypes$patient_clonotype
@@ -101,7 +102,7 @@ df = sc@meta.data %>%
   filter(integrated_annotations %in% c('CD8+ TEMRA cells', 'CD8+ effector memory T cells 1') &
            condition_collapsed %ni% 'healthy') %>%
   group_by(integrated_annotations, patient, unique_binders) %>%
-  count %>% 
+  dplyr::count() %>% 
   group_by(integrated_annotations, patient) %>% 
   mutate(frac = n/sum(n)) %>%
   as.data.frame
@@ -165,20 +166,6 @@ wilcox.test(df.1$frac ~ df.1$condition_collapsed)
 df.2 = df %>% filter(integrated_annotations == 'CD8+ effector memory T cells 1' &
                        unique_binders == 'unique_binder')
 wilcox.test(df.2$frac ~ df.2$condition_collapsed)
-
-
-
-#---- Plot clonal expansion in A0101-2 binding cells
-
-pdf(file = paste0(outdir, 'clonal_expansion_A0101-2_binding_cells.pdf'))
-FeaturePlot(dex.subset, feature = 'clonotype_size', cols = c('yellow', 'red'), order = TRUE)
-dev.off()
-
-
-pdf(file = paste0(outdir, 'clonal_expansion_A0101-2_binding_cells_covid_split.pdf'), width = 10)
-FeaturePlot(dex.subset, feature = 'clonotype_size', cols = c('yellow', 'red'), 
-			split.by = 'COVID', order = TRUE)
-dev.off()
 
 
 

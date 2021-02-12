@@ -23,10 +23,6 @@ Idents(sc) = 'integrated_annotations'
 
 # Subset to MHC class I/II restricted T cells
 sc = subset(sc, integrated_annotations %ni% c('Gamma Delta T cells', 'MAIT cells', 'Atypical NKT cells'))
-sc$Clonotype = str_c(sc$patient, '_', sc$TCR_clonotype_id)
-clonotype_size = table(sc$Clonotype)
-sc$clonotype_size = clonotype_size[sc$Clonotype]
-
 
 # Compute morisita overlap index of clonotypes between cell types
 # The clonotype call is based on the nucleotide sequences. As the chance of overlap between

@@ -222,7 +222,7 @@ dev.off()
 
 
 
-#---- Bar chart of unique dextramer binding counts
+#---- Bar chart of unique dextramer binding counts (condition collapsed)
 
 # Make dextramer unique binding counts data frame
 indir = '~/sciebo/CovidEpiMap/epitope_analysis/binding_counts_unique/'
@@ -264,4 +264,48 @@ ggplot(counts) +
   ylab('Unique binding count')
 dev.off()
 
+
+
+#---- Bar chart of unique dextramer binding counts (patient)
+
+# Make dextramer unique binding counts data frame
+patients = c('31', '32', '1', 
+             '2', '15', '3',
+             '11', '19', '5', 
+             '6', '7', '12',
+             '13', '18')
+
+counts = data.frame(cell.type = rep(cell.types, length(patients)), 
+                    condition = rep(patients, each = length(cell.types)))
+
+# Add counts from dextramers with unique binding (patient)
+counts = data.frame()
+for (dextramer in dextramers){
+  file.prefix = paste0(dextramer, '.unique.binding.count.cell.type.patient.txt')
+  data = read.table(file = paste0(indir, file.prefix), header = TRUE, sep = '\t')
+  data$dextramer = colnames(data)[ncol(data)]
+  colnames(data)= c('patient', 'cell.type', 'count', 'dextramer')
+  counts = rbind(counts, data)
+}
+counts = counts[counts$cell.type %in% cell.types,]
+counts$patient = factor(counts$patient, levels = patients)
+
+# Plot
+pdf(file = paste0(indir, 'unique_binding_counts_patient.pdf'), width = 7, height = 4.5)
+ggplot(counts) +
+  geom_bar(aes(x = reorder_within(cell.type, -count, dextramer), y = count, fill = patient),
+           stat = 'identity') +
+  scale_x_reordered() +
+  facet_wrap(~ dextramer, scales = 'free') +
+  scale_fill_viridis(discrete = TRUE) +
+  theme_cowplot() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 10),
+        legend.title = element_text(size = 10),
+        axis.text.x = element_text(color = 'black', size = 8, angle = 90, hjust = 1, vjust = 0.5),
+        axis.text.y = element_text(color = 'black', size = 8),
+        legend.text = element_text(size = 10),
+        axis.ticks = element_blank()) +
+  ylab('Unique binding count')
+dev.off()
 
