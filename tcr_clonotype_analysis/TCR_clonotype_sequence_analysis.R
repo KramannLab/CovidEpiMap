@@ -16,7 +16,20 @@ outdir = '~/sciebo/CovidEpiMap/tcr_sequence_analysis/'
 dex.subset = readRDS(file = paste0(indir, 'A0101-2.unique.binders.rds'))
 df = dex.subset@meta.data
 
-# Count CDR3 sequences of epitope-binding cells
+# Count CDR3 sequences of epitope-binding cells (per patient)
+data = df %>% 
+  group_by(patient) %>% 
+  dplyr::count(TCR_cdr3s_aa, name = 'TCR_cdr3s_aa_count') %>% 
+  arrange(desc(TCR_cdr3s_aa_count)) %>% 
+  as.data.frame()
+
+write.table(data,
+            file = paste0(outdir, 'A0101-2.unique.binders.cdr3s.counts.patient.txt'),
+            sep = '\t',
+            row.names = FALSE,
+            quote = FALSE)
+
+# Count CDR3 sequences of epitope-binding cells (per condition collapsed)
 data = df %>% 
   group_by(condition_collapsed) %>% 
   dplyr::count(TCR_cdr3s_aa, name = 'TCR_cdr3s_aa_count') %>% 
@@ -24,7 +37,7 @@ data = df %>%
   as.data.frame()
 
 write.table(data,
-            file = paste0(outdir, 'A0101-2.unique.binders.cdr3s.counts.txt'),
+            file = paste0(outdir, 'A0101-2.unique.binders.cdr3s.counts.condition.collapsed.txt'),
             sep = '\t',
             row.names = FALSE,
             quote = FALSE)

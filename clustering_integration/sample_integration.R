@@ -67,29 +67,11 @@ sc$condition = condition.table[sc$orig.ident, 'condition']
 
 
 
-#---- Visualize counts from ADT library (dextramer + CITE seq)
-
-DefaultAssay(sc) = 'ADT'
-sc = ScaleData(sc, verbose = FALSE, features = rownames(sc))
-markers = rownames(sc[['ADT']])
-
-
-pdf(file = paste0(outdir, 'integrated_RNA_ADT_Markers_Heatmap.pdf'), width = 15)
-DoHeatmap(subset(sc, downsample = 2000), features = markers, assay = 'ADT', 
-	raster = FALSE, size = 1) + NoLegend()
-dev.off()
-
-
-
-#---- Remove poor quality clusters and non-T cells
+#---- Remove poor quality clusters and non-T cells, re-integrate and re-cluster
 
 bad.clusters = c('5', '6', '8', '11', '12', 
-				'16', '20', '21', '22', '23', '24')
+                 '16', '20', '21', '22', '23', '24')
 sc.subset = subset(sc, subset = RNA_snn_res.1 %ni% bad.clusters)
-
-
-
-#---- Re-integrate and re-cluster the T cells only
 
 sc.subset = NormalizeData(sc.subset, verbose = FALSE)
 sc.subset = FindVariableFeatures(sc.subset, verbose = FALSE)
@@ -113,6 +95,10 @@ sc.subset = RenameIdents(sc.subset, `0` = 'CD8+ TEMRA cells', `1` = 'CD8+ effect
 					`11` = 'CD8+ cycling effector T cells', `12` = 'Atypical NKT cells',
 					`13` = 'CD8+ exhausted T cells')
 
+# Remove patient 29 (healthy) as they had high proportion of effector T cells and
+# had an infection 4 months prior to study. May distort healthy control group
+sc.subset = subset(sc.subset, subset = patient %ni% '29')
+
 
 # Order meta data
 sc.subset$integrated_annotations = Idents(sc.subset)
@@ -126,7 +112,7 @@ sc.subset$condition = factor(sc.subset$condition,
 									'recovered_severe'))
 
 sc.subset$patient = factor(sc.subset$patient,
-						levels = c('29', '31', '32',
+						levels = c('31', '32',
 									'1', '2', '15',
 									'3', '11', '19',
 									'5', '6', '7',

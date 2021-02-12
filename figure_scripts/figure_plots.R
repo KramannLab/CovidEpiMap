@@ -8,7 +8,6 @@ library(Seurat)
 library(ggplot2)
 library(cowplot)
 library(dplyr)
-library(genesorteR)
 library(viridis)
 '%ni%' = Negate('%in%')
 source('sc_source/sc_source.R')
@@ -144,17 +143,9 @@ df$condition_collapsed = sub('active_', '', df$condition)
 df$condition_collapsed = sub('recovered_', '', df$condition_collapsed)
 
 
+
 pdf(file = paste0(indir, 'integrated_Tcells_barchart_celltype_condition_average.pdf'), width = 8)
 ggplot(df, aes(fill = cluster, y = mean, x = condition)) + 
-    geom_bar(stat = 'identity', position = position_fill(reverse = TRUE)) + 
-labs(y = 'Average proportion', x = element_blank(), fill = 'Cell type') +
-theme_classic() +
-theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-scale_fill_manual(values = cell.type.colors)
-dev.off()
-
-pdf(file = paste0(indir, 'integrated_Tcells_barchart_celltype_condition_collapsed_average.pdf'))
-ggplot(df, aes(fill = cluster, y = mean, x = condition_collapsed)) + 
     geom_bar(stat = 'identity', position = position_fill(reverse = TRUE)) + 
 labs(y = 'Average proportion', x = element_blank(), fill = 'Cell type') +
 theme_classic() +
@@ -210,5 +201,19 @@ DoHeatmap(subset(sc, downsample = 500),
                        limits = c(-1,1), 
                        oob = scales::squish)
 dev.off()
+
+
+DoHeatmap(subset(subset, downsample = 500), 
+          features = markers, 
+          assay = 'ADT', 
+          raster = FALSE, 
+          group.colors = cell.type.colors,
+          group.bar.height = 0.03, 
+          label = FALSE) +
+  scale_fill_gradient2(low = viridis(2)[1], 
+                       mid = '#F0F0F0', 
+                       high = viridis(2)[2], 
+                       limits = c(-1,1), 
+                       oob = scales::squish)
 
 
