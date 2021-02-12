@@ -146,13 +146,12 @@ dev.off()
 
 
 
-
 #---- Bar chart with TCR V genes in each cluster (show top 20 per cluster)
 
 Idents(sc.subset) = sc.subset$integrated_annotations
 
 
-pdf(file = paste0(outdir, 'plots/integrated_Tcells_TCRV_genes.pdf'), width = 12)
+pdf(file = paste0(outdir, 'integrated_Tcells_TCRV_genes.pdf'), width = 12)
 for (cell.type in names(cell.type.colors)){
 	subset = subset(sc.subset, idents = cell.type)
 
@@ -185,7 +184,7 @@ dev.off()
 sc.subset = CellCycleScoring(sc.subset, s.features = cc.genes$s.genes, 
 							g2m.features = cc.genes$g2m.genes)
 
-pdf(file = paste0(outdir, 'integrated_Tcells_cell_cycle_score.pdf'), width = 12, height = 4)
+pdf(file = paste0(outdir, 'integrated_Tcells_cell_cycle_score.pdf'), width = 7, height = 4)
 VlnPlot(sc.subset, features = 'S.Score', 
         pt.size = 0, 
         split.by = 'condition', 
@@ -220,14 +219,22 @@ sc.subset[['percent.ribo']] = PercentageFeatureSet(sc.subset, pattern = '^RP[SL]
 sc.subset[['percent.mt']] = PercentageFeatureSet(sc.subset, pattern = '^MT-')
 
 
-pdf(file = paste0(outdir, 'integrated_Tcells_percent_mt_condition.pdf'))
-VlnPlot(sc.subset, feature = 'percent.mt', pt.size = 0, group.by = 'condition')
-VlnPlot(sc.subset, feature = 'percent.mt', pt.size = 0, group.by = 'condition_condensed')
+pdf(file = paste0(outdir, 'integrated_Tcells_percent_mt_condition.pdf'), width = 4, height = 3)
+VlnPlot(sc.subset, feature = 'percent.mt', 
+        pt.size = 0, 
+        group.by = 'condition',
+        cols = viridis(5)) +
+  theme(text = element_text(size = 8),
+        axis.ticks = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank()) +
+  ylab('% mitochondrial reads') +
+  ggtitle('')
 dev.off()
 
 
 
 #---- Save data
 
-saveRDS(sc.subset, file = 'integrated.RNA.Tcells.annotated.rds')
+saveRDS(sc.subset, file = paste0(indir, 'integrated.RNA.Tcells.annotated.rds'))
 

@@ -28,13 +28,11 @@ pdf(file = paste0(indir, 'cell_type_markers.pdf'), width = 8, height = 4)
 p
 dev.off()
 
-get_violin(object = sc, features.use = genes[1:3])
-
 
 
 #---- General QC plots
 
-patients = c('29', '31', '32',
+patients = c('31', '32',
              '1', '2', '15',
              '3', '11', '19',
              '5', '6', '7',
@@ -125,10 +123,11 @@ add_count(wt = count, name = 'total') %>%
 mutate(fraction = count/total) %>%
 as.data.frame
 
-condition = rep(c('healthy', 'active_mild',
-        'active_severe', 'recovered_mild',
-        'recovered_severe'), 
-        each = 3*13)
+condition = c(rep('healthy', 2*13),
+              rep(c('active_mild',
+                    'active_severe', 
+                    'recovered_mild',
+                    'recovered_severe'), each = 3*13))
 df = cbind(df, condition)
 
 df = df %>% 
@@ -143,14 +142,32 @@ df$condition_collapsed = sub('active_', '', df$condition)
 df$condition_collapsed = sub('recovered_', '', df$condition_collapsed)
 
 
-
-pdf(file = paste0(indir, 'integrated_Tcells_barchart_celltype_condition_average.pdf'), width = 8)
+pdf(file = paste0(indir, 'integrated_Tcells_barchart_celltype_condition_average.pdf'), width = 8, height = 5)
 ggplot(df, aes(fill = cluster, y = mean, x = condition)) + 
     geom_bar(stat = 'identity', position = position_fill(reverse = TRUE)) + 
 labs(y = 'Average proportion', x = element_blank(), fill = 'Cell type') +
 theme_classic() +
-theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+theme(axis.text.x = element_text(angle = 45, 
+                                 hjust = 1,
+                                 color = 'black'),
+      axis.text.y = element_text(color = 'black'),
+      axis.ticks = element_blank()) +
 scale_fill_manual(values = cell.type.colors)
+dev.off()
+
+
+
+#---- Bar charts with cell type distribution per patient
+
+pdf(file = paste0(indir, 'integrated_Tcells_barchart_celltype_patient.pdf'), width = 7, height = 5)
+ggplot(cell.table, aes(fill = cluster, x = patient)) + 
+  geom_bar(position = position_fill(reverse = TRUE)) + 
+  labs(y = 'Proportion', x = element_blank(), fill = 'Cell type') +
+  theme_classic() +
+  theme(axis.text.x = element_text(color = 'black'),
+        axis.text.y = element_text(color = 'black'),
+        axis.ticks = element_blank()) +
+  scale_fill_manual(values = cell.type.colors)
 dev.off()
 
 
@@ -162,6 +179,7 @@ df = cell.table %>%
   group_by(condition) %>%
   count %>%
   as.data.frame
+df = rbind(df, c('healthy', 0))
 df = rbind(df, c('active_mild', 0))
 df = rbind(df, c('recovered_mild', 0))
 df$n = as.integer(df$n)
@@ -201,19 +219,4 @@ DoHeatmap(subset(sc, downsample = 500),
                        limits = c(-1,1), 
                        oob = scales::squish)
 dev.off()
-
-
-DoHeatmap(subset(subset, downsample = 500), 
-          features = markers, 
-          assay = 'ADT', 
-          raster = FALSE, 
-          group.colors = cell.type.colors,
-          group.bar.height = 0.03, 
-          label = FALSE) +
-  scale_fill_gradient2(low = viridis(2)[1], 
-                       mid = '#F0F0F0', 
-                       high = viridis(2)[2], 
-                       limits = c(-1,1), 
-                       oob = scales::squish)
-
 
