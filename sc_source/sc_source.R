@@ -477,7 +477,10 @@ upper_trig_tile_plot = function(matrix, text_size = 2){
   
   p = ggplot(coef_matrix, aes(x = Var1, y = Var2, fill = value)) +
     geom_tile() + 
-    geom_text(aes(label = round(value, digits = 2)), size = text_size) +
+    geom_text(aes(label = round(value, digits = 2)), 
+              size = text_size,
+              color = 'white',
+              fontface = 2) +
     scale_fill_gradient2(high = colours[7], 
                          mid = colours[4], 
                          midpoint = ((range(na.omit(coef_matrix$value)))/2)[2], 

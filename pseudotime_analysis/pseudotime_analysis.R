@@ -134,12 +134,12 @@ df$condition = droplevels(df$condition)
 # Use this method over Wilcoxon rank test as it is more sensitive to shape changes in distribution
 # and ours appear to be bimodal.
 
-# Lineage 1 (p < 2.2e-16, D = 0.30905)
+# Lineage 1 (p < 2.2e-16, D = 0.31004)
 ks.test(df[df$condition == 'active_mild','slingshot_pseudotime_curve1'],
         df[df$condition == 'active_severe','slingshot_pseudotime_curve1'])
 
 
-# Lineage 2 (p < 2.2e-16, D = 0.40257)
+# Lineage 2 (p < 2.2e-16, D = 0.40237)
 ks.test(df[df$condition == 'active_mild','slingshot_pseudotime_curve2'],
         df[df$condition == 'active_severe','slingshot_pseudotime_curve2'])
 

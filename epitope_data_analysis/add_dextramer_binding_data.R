@@ -11,280 +11,198 @@ library(ggplot2)
 library(cowplot)
 library(viridis)
 library(tidytext)
+library(reshape2)
+library(matrixStats)
 indir = '~/sciebo/CovidEpiMap/integrated/'
-datdir = '~/sciebo/CovidEpiMap/tcr/'
 outdir = '~/sciebo/CovidEpiMap/epitope_analysis/'
 '%ni%' = Negate('%in%')
 source('sc_source/sc_source.R')
 
 
 # Format data
-sc = readRDS(file = paste0(indir, 'integrated.RNA.Tcells.annotated.rds'))
-DefaultAssay(sc) = 'RNA'
-Idents(sc) = 'integrated_annotations'
+sc.all = readRDS(file = paste0(indir, 'integrated.RNA.Tcells.annotated.rds'))
+DefaultAssay(sc.all) = 'RNA'
+Idents(sc.all) = 'integrated_annotations'
 
-
-# Add clonotype size
-sc$patient_clonotype = str_c(as.character(sc$patient), '_', sc$TCR_clonotype_id)
-
-df = sc@meta.data %>% 
-	group_by(patient_clonotype) %>% 
-	add_count(name = 'clonotype_size') %>% 
-	as.data.frame()
-
-sc$clonotype_size = df$clonotype_size
-
+# Subset to relevant cell types
+excluded.cell.types = c('Gamma Delta T cells', 'MAIT cells', 'Atypical NKT cells')
+sc = subset(sc.all, integrated_annotations %ni% excluded.cell.types)
+sc$integrated_annotations = droplevels(sc$integrated_annotations)
+sc$Clonotype = str_c(sc$patient, '_', sc$TCR_clonotype_id)
 
 # Add meta data
 conditions = levels(sc$condition)
-sc[['COVID']] = ifelse(sc$condition %in% conditions[-1], 'COVID', 'NON-COVID')
 sc$condition_collapsed = sub('active_', '', sc$condition)
 sc$condition_collapsed = sub('recovered_', '', sc$condition_collapsed)
 sc$condition_collapsed = factor(sc$condition_collapsed, levels = c('healthy', 'mild', 'severe'))
 
 
-# Subset clonotypes to clonotype size > 5 and binding concordance > 30%
-clonotype.table = read.table(file = paste0(datdir, 'epitopes_bc0.3.csv'), sep = ',', header = TRUE)
-clonotype.table = clonotype.table[clonotype.table$ClonotypeSize > 5,]
-clonotype.table = clonotype.table[clonotype.table$BindingConcordance > 0.3,]
-dextramers = unique(clonotype.table$Marker)
+# Get dextramer counts and convert to log2 scale (add pseudocount)
+adt = GetAssayData(sc, assay = 'ADT_UPDATED', slot = 'counts')
+adt_log2 = as.matrix(log2(adt + 1))
+
+# Median expression of negative control
+negative_controls = c('A0101-33', 'A0201-34', 'A0301-35', 'general-36')
+negctrl = as.array(colMedians(adt_log2[negative_controls,]))
+
+# L2FC between the dextramers (n = 15) and the median of the negative controls
+df_scores = sweep(adt_log2[1:15,], 2, negctrl, '-')
+
+# Get clonotype size
+clonotype_size = table(sc$Clonotype)
+
+# Add clonotype and size to L2FCs
+df_scores = melt(df_scores, na.rm = T)
+colnames(df_scores) = c('dextramer', 'barcode', 'L2FC')
+df_scores$clonotype = sc$Clonotype[as.character(df_scores$barcode)]
+df_scores$clonotype_size = as.numeric(clonotype_size[df_scores$clonotype])
+
+# Define binding concordance as percentage of cells within a clonotype
+# with a L2FC > 2 between the dextramer and the median of negative control
+# Keep clonotypes with binding concordance > 0.3 and size > 5
+binding_concordance = df_scores %>%
+  group_by(clonotype, dextramer) %>%
+  mutate(binding_concordance = sum(L2FC > 2)/clonotype_size) %>%
+  filter(binding_concordance > 0.3,
+         clonotype_size > 5)
+
+# Get binding clonotypes
+binding_concordance = binding_concordance %>% 
+  select(-barcode, -L2FC) %>% 
+  as.data.frame %>% 
+  unique
 
 
 
 #---- Add binding information per dextramer
 
-for (dextramer in dextramers){
-	# Get clonotypes with enrichment for dextramer
-	clonotype = clonotype.table[which(clonotype.table$Marker == dextramer),]$Clonotype
+dextramers = as.vector(unique(binding_concordance$dextramer))
+outdir = '~/sciebo/CovidEpiMap/epitope_analysis/binding_counts/'
 
-	# Extract cells belonging to clonotypes with enrichment
-	df = sc@meta.data
-	binding.cells = rownames(df[which(df$patient_clonotype %in% clonotype),])
-
-	# Add meta data
-	dextramer = sub('-', '_', dextramer)
-	sc[[dextramer]] = ifelse(colnames(sc) %in% binding.cells, 'YES', 'NO')
-	df = sc@meta.data
-
-
-	# Write binding cell overview to table
-	# Per cell type
-	binding.info.cell.type = df %>% 
-				group_by(integrated_annotations) %>% 
-				filter(!!sym(dextramer) == 'YES') %>% 
-				count(name = dextramer) %>% 
-				as.data.frame
-
-	write.table(binding.info.cell.type, 
-				file = paste0(outdir, dextramer, '.binding.count.cell.type.txt'),
-				sep = '\t',
-				row.names = FALSE,
-				quote = FALSE)
-
-	# Per cell type, per patient
-	binding.info.cell.type.patient = df %>% 
-				group_by(patient, integrated_annotations) %>% 
-				filter(!!sym(dextramer) == 'YES') %>% 
-				count(name = dextramer) %>% 
-				as.data.frame
-
-	write.table(binding.info.cell.type.patient, 
-				file = paste0(outdir, dextramer, '.binding.count.cell.type.patient.txt'),
-				sep = '\t',
-				row.names = FALSE,
-				quote = FALSE)
-
-	# Per condition
-	binding.info.condition = df %>% 
-				group_by(condition) %>% 
-				filter(!!sym(dextramer) == 'YES') %>% 
-				count(name = dextramer) %>% 
-				as.data.frame
-
-	write.table(binding.info.condition, 
-				file = paste0(outdir, dextramer, '.binding.count.condition.txt'),
-				sep = '\t',
-				row.names = FALSE,
-				quote = FALSE)
-
-	# Per condition, per cell type
-	binding.info.condition.cell.type = df %>% 
-				group_by(condition, integrated_annotations) %>% 
-				filter(!!sym(dextramer) == 'YES') %>% 
-				count(name = dextramer) %>% 
-				as.data.frame
-
-	write.table(binding.info.condition.cell.type, 
-				file = paste0(outdir, dextramer, '.binding.count.condition.cell.type.txt'),
-				sep = '\t',
-				row.names = FALSE,
-				quote = FALSE)
-
-	# Per condition collapsed
-	binding.info.condition = df %>% 
-				group_by(condition_collapsed) %>% 
-				filter(!!sym(dextramer) == 'YES') %>% 
-				count(name = dextramer) %>% 
-				as.data.frame
-
-	write.table(binding.info.condition, 
-				file = paste0(outdir, dextramer, '.binding.count.condition.collapsed.txt'),
-				sep = '\t',
-				row.names = FALSE,
-				quote = FALSE)
-
-	# Per condition collapsed, per cell type
-	binding.info.condition.cell.type = df %>% 
-				group_by(condition_collapsed, integrated_annotations) %>% 
-				filter(!!sym(dextramer) == 'YES') %>% 
-				count(name = dextramer) %>% 
-				as.data.frame
-
-	write.table(binding.info.condition.cell.type, 
-				file = paste0(outdir, dextramer, '.binding.count.condition.collapsed.cell.type.txt'),
-				sep = '\t',
-				row.names = FALSE,
-				quote = FALSE)
+for (dex in dextramers){
+  # Get clonotypes with enrichment for dextramer
+  clonotype = binding_concordance %>% 
+    filter(dextramer == dex) %>% 
+    select(clonotype) %>% 
+    unique
+  clonotype = clonotype$clonotype
+  
+  # Extract cells belonging to clonotypes with enrichment
+  df = sc@meta.data
+  binding.cells = rownames(df[which(df$Clonotype %in% clonotype),])
+  
+  # Add meta data
+  dex = sub('-', '_', dex)
+  sc[[dex]] = ifelse(colnames(sc) %in% binding.cells, 'YES', 'NO')
+  df = sc@meta.data
+  
+  # Write binding cell overview to table
+  # Per cell type, per patient
+  binding.info.cell.type.patient = df %>% 
+    group_by(patient, integrated_annotations) %>% 
+    filter(!!sym(dex) == 'YES') %>% 
+    dplyr::count(name = dex) %>% 
+    as.data.frame
+  
+  write.table(binding.info.cell.type.patient, 
+              file = paste0(outdir, dex, '.binding.count.cell.type.patient.txt'),
+              sep = '\t',
+              row.names = FALSE,
+              quote = FALSE)
+  
+  # Per condition collapsed
+  binding.info.condition = df %>% 
+    group_by(condition_collapsed) %>% 
+    filter(!!sym(dex) == 'YES') %>% 
+    dplyr::count(name = dex) %>% 
+    as.data.frame
+  
+  write.table(binding.info.condition, 
+              file = paste0(outdir, dex, '.binding.count.condition.collapsed.txt'),
+              sep = '\t',
+              row.names = FALSE,
+              quote = FALSE)
+  
+  # Per condition collapsed, per cell type
+  binding.info.condition.cell.type = df %>% 
+    group_by(condition_collapsed, integrated_annotations) %>% 
+    filter(!!sym(dex) == 'YES') %>% 
+    dplyr::count(name = dex) %>% 
+    as.data.frame
+  
+  write.table(binding.info.condition.cell.type, 
+              file = paste0(outdir, dex, '.binding.count.condition.collapsed.cell.type.txt'),
+              sep = '\t',
+              row.names = FALSE,
+              quote = FALSE)
 }
 
-saveRDS(sc, file = paste0(indir, 'integrated.RNA.Tcells.annotated.rds'))
+
+# Save data
+dextramers = sub('-', '_', dextramers)
+df = sc@meta.data
+df.all = sc.all@meta.data
+
+for (dex in dextramers){
+  df.sub = df[,dex]
+  names(df.sub) = rownames(df)
+  sc.all[[dex]] = df.sub[rownames(df.all)]
+}
+
+saveRDS(sc.all, file = paste0(indir, 'integrated.RNA.Tcells.annotated.rds'))
 
 
 
 #---- Count unique binding cells
 
-dextramers = sub('-', '_', dextramers)
 dextramers_select = c('A0101_2', 'A0201_4', 'A0201_6')
-
+outdir = '~/sciebo/CovidEpiMap/epitope_analysis/binding_counts_unique/'
 
 for (i in 1:length(dextramers_select)){
-	dextramer = dextramers_select[i]
-	dextramers_remain = dextramers[dextramers %ni% dextramer]
-	subset = subset(sc, !!sym(dextramer) == 'YES')
-
-	for (remain_dex in dextramers_remain){
-		subset = subset(subset, !!sym(remain_dex) == 'NO' )
-	}
-
-	df = subset@meta.data
-
-
-	# Write binding cell overview to table
-	# Per cell type
-	binding.info.cell.type = df %>% 
-				group_by(integrated_annotations) %>% 
-				count(name = dextramer) %>% 
-				as.data.frame
-
-	write.table(binding.info.cell.type, 
-				file = paste0(outdir, dextramer, '.unique.binding.count.cell.type.txt'),
-				sep = '\t',
-				row.names = FALSE,
-				quote = FALSE)
-
-	# Per cell type, per patient
-	binding.info.cell.type.patient = df %>% 
-				group_by(patient, integrated_annotations) %>% 
-				count(name = dextramer) %>% 
-				as.data.frame
-
-	write.table(binding.info.cell.type.patient, 
-				file = paste0(outdir, dextramer, '.unique.binding.count.cell.type.patient.txt'),
-				sep = '\t',
-				row.names = FALSE,
-				quote = FALSE)
-
-	# Per condition
-	binding.info.condition = df %>% 
-				group_by(condition) %>% 
-				count(name = dextramer) %>% 
-				as.data.frame
-
-	write.table(binding.info.condition, 
-				file = paste0(outdir, dextramer, '.unique.binding.count.condition.txt'),
-				sep = '\t',
-				row.names = FALSE,
-				quote = FALSE)
-
-	# Per condition, per cell type
-	binding.info.condition.cell.type = df %>% 
-				group_by(condition, integrated_annotations) %>% 
-				count(name = dextramer) %>% 
-				as.data.frame
-
-	write.table(binding.info.condition.cell.type, 
-				file = paste0(outdir, dextramer, '.unique.binding.count.condition.cell.type.txt'),
-				sep = '\t',
-				row.names = FALSE,
-				quote = FALSE)
-
-	# Per condition collapsed
-	binding.info.condition = df %>% 
-				group_by(condition_collapsed) %>% 
-				count(name = dextramer) %>% 
-				as.data.frame
-
-	write.table(binding.info.condition, 
-				file = paste0(outdir, dextramer, '.unique.binding.count.condition.collapsed.txt'),
-				sep = '\t',
-				row.names = FALSE,
-				quote = FALSE)
-
-	# Per condition collapsed, per cell type
-	binding.info.condition.cell.type = df %>% 
-				group_by(condition_collapsed, integrated_annotations) %>% 
-				count(name = dextramer) %>% 
-				as.data.frame
-
-	write.table(binding.info.condition.cell.type, 
-				file = paste0(outdir, dextramer, '.unique.binding.count.condition.collapsed.cell.type.txt'),
-				sep = '\t',
-				row.names = FALSE,
-				quote = FALSE)
+  dextramer = dextramers_select[i]
+  dextramers_remain = dextramers[dextramers %ni% dextramer]
+  subset = subset(sc, !!sym(dextramer) == 'YES')
+  
+  for (remain_dex in dextramers_remain){
+    subset = subset(subset, !!sym(remain_dex) == 'NO' )
+  }
+  
+  df = subset@meta.data
+  
+  # Write binding cell overview to table
+  # Per cell type, per patient
+  binding.info.cell.type.patient = df %>% 
+    group_by(patient, integrated_annotations) %>% 
+    dplyr::count(name = dextramer) %>% 
+    as.data.frame
+  
+  write.table(binding.info.cell.type.patient, 
+              file = paste0(outdir, dextramer, '.unique.binding.count.cell.type.patient.txt'),
+              sep = '\t',
+              row.names = FALSE,
+              quote = FALSE)
+  
+  # Per condition collapsed
+  binding.info.condition = df %>% 
+    group_by(condition_collapsed) %>% 
+    dplyr::count(name = dextramer) %>% 
+    as.data.frame
+  
+  write.table(binding.info.condition, 
+              file = paste0(outdir, dextramer, '.unique.binding.count.condition.collapsed.txt'),
+              sep = '\t',
+              row.names = FALSE,
+              quote = FALSE)
+  
+  # Per condition collapsed, per cell type
+  binding.info.condition.cell.type = df %>% 
+    group_by(condition_collapsed, integrated_annotations) %>% 
+    dplyr::count(name = dextramer) %>% 
+    as.data.frame
+  
+  write.table(binding.info.condition.cell.type, 
+              file = paste0(outdir, dextramer, '.unique.binding.count.condition.collapsed.cell.type.txt'),
+              sep = '\t',
+              row.names = FALSE,
+              quote = FALSE)
 }
-
-
-
-#---- Bar chart of unique dextramer binding counts
-
-indir = '~/sciebo/CovidEpiMap/epitope_analysis/binding_counts_unique/'
-
-# Make dextramer unique binding counts data frame
-cell.types = names(cell.type.colors)
-cell.types = cell.types[cell.types %ni% c('Gamma Delta T cells', 'MAIT cells', 'Atypical NKT cells')]
-dextramers = c('A0101_2', 'A0201_4', 'A0201_6')
-counts = data.frame(cell.type = rep(cell.types, 3), 
-                    condition = rep(c('healthy', 'mild', 'severe'), each = length(cell.types)))
-
-
-# Add counts from dextramers with unique binding
-counts = data.frame()
-for (dextramer in dextramers){
-  file.prefix = paste0(dextramer, '.unique.binding.count.condition.collapsed.cell.type.txt')
-  data = read.table(file = paste0(indir, file.prefix), header = TRUE, sep = '\t')
-  data$dextramer = colnames(data)[ncol(data)]
-  colnames(data)= c('condition', 'cell.type', 'count', 'dextramer')
-  counts = rbind(counts, data)
-}
-counts = counts[counts$cell.type %in% cell.types,]
-counts$condition = factor(counts$condition, levels = c('healthy', 'mild', 'severe'))
-
-# Plot
-pdf(file = paste0(indir, 'unique_binding_counts.pdf'), width = 7, height = 4)
-ggplot(counts) +
-  geom_bar(aes(x = reorder_within(cell.type, -count, dextramer), y = count, fill = condition),
-           stat = 'identity') +
-  scale_x_reordered() +
-  facet_wrap(~ dextramer, scales = 'free') +
-  scale_fill_viridis(discrete = TRUE) +
-  theme_cowplot() +
-  theme(axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 10),
-        legend.title = element_text(size = 10),
-        axis.text.x = element_text(color = 'black', size = 8, angle = 90, hjust = 1, vjust = 0.5),
-        axis.text.y = element_text(color = 'black', size = 8),
-        legend.text = element_text(size = 10),
-        axis.ticks = element_blank()) +
-  ylab('Unique binding count')
-dev.off()
-

@@ -24,6 +24,8 @@ Idents(sc) = 'integrated_annotations'
 # Subset to MHC class I/II restricted T cells
 sc = subset(sc, integrated_annotations %ni% c('Gamma Delta T cells', 'MAIT cells', 'Atypical NKT cells'))
 sc$Clonotype = str_c(sc$patient, '_', sc$TCR_clonotype_id)
+clonotype_size = table(sc$Clonotype)
+sc$clonotype_size = clonotype_size[sc$Clonotype]
 
 
 # Compute morisita overlap index of clonotypes between cell types
@@ -40,7 +42,7 @@ dev.off()
 
 
 
-#---- Plot clonotype expansion groups
+#---- Plot clonotype expansion groups on UMAP
 
 sc$clonotype_cut = cut(sc$clonotype_size, breaks = c(0, 1, 5, 20, 100, Inf), 
                        labels = rev(c('Hyperexpanded (100 < x <= Inf)', 
@@ -56,13 +58,22 @@ group.order = c(NA, rev(c('Hyperexpanded (100 < x <= Inf)',
                           'Small (1 < x <= 5)', 
                           'Single (0 < x <= 1)')))
 
+pdf(file = paste0(outdir, 'clonal_expansion_groups.pdf'), width = 9.8)
+DimPlot(sc, group.by = 'clonotype_cut', 
+        order = TRUE,
+        cols = viridis(5))
+dev.off()
+
+
+
+#---- Bar charts of clonotype expansion groups
+
 df = sc@meta.data
 df[is.na(df$Clonotype),'clonotype_cut'] = NA
-df = df[df$patient != '29',]
 
 
 # Plot
-pdf(file = paste0(outdir, 'clonotype_expansion_group_abundance_cell_type_without_patient29.pdf'), width = 6, height = 4)
+pdf(file = paste0(outdir, 'clonotype_expansion_group_abundance_cell_type.pdf'), width = 6, height = 4)
 ggplot(df, aes(x = integrated_annotations, 
                fill = factor(clonotype_cut, levels = group.order, exclude = NULL))) + 
   geom_bar(position = 'fill') + 
@@ -76,7 +87,7 @@ ggplot(df, aes(x = integrated_annotations,
        y =  'Relative abundance')
 dev.off()
 
-pdf(file = paste0(outdir, 'clonotype_expansion_group_abundance_condition_without_patient29.pdf'), width = 5, height = 4)
+pdf(file = paste0(outdir, 'clonotype_expansion_group_abundance_condition.pdf'), width = 5, height = 4)
 ggplot(df, aes(x = condition,
                fill = factor(clonotype_cut, levels = group.order, exclude = NULL))) + 
   geom_bar(position = 'fill') + 
@@ -95,7 +106,7 @@ df$integrated_annotations_condition = factor(df$integrated_annotations_condition
                                              levels = paste0(rep(names(cell.type.colors),each = 5), 
                                                              levels(df$condition)))
 
-pdf(file = paste0(outdir, 'clonotype_expansion_group_abundance_cell_type_condition_without_patient29.pdf'), width = 10, height = 6)
+pdf(file = paste0(outdir, 'clonotype_expansion_group_abundance_cell_type_condition.pdf'), width = 10, height = 6)
 ggplot(df, aes(x = integrated_annotations_condition, 
                fill = factor(clonotype_cut, levels = group.order, exclude = NULL))) + 
   geom_bar(position = 'fill') + 
