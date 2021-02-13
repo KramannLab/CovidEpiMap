@@ -60,32 +60,6 @@ get_markers = function(sc, condition, control, cell.type, only.sig = TRUE, adj.p
 
 
 
-#---- Heatmap function for DE genes of integrated data
-
-top_heatmap = function(sc, markers, cell.type, disease, control, n){
-  if (nrow(markers) > 0){
-    top.genes = markers %>%
-      top_n(n = n, wt = avg_log2FC)
-
-    bot.genes = markers %>%
-      top_n(n = -n, wt = avg_log2FC)
-
-    genes = unique(c(top.genes$gene, bot.genes$gene))
-
-    cell.type.name = gsub('/', '_',cell.type)
-    cell.type.name = gsub(' ', '_',cell.type.name)
-    pdf(file = paste0('diff_genes/heatmaps/integrated_diff_genes_', cell.type.name,
-        '_', disease, '_vs_', control, '.pdf'))
-    print(DoHeatmap(subset(sc, integrated_annotations == cell.type & condition %in% c(disease, control)), 
-      features = genes, group.by = 'condition',
-      size = 3, raster = FALSE, angle = 30) + labs(title = cell.type))
-    dev.off()
-  }
-}
-
-
-
-
 #---- TF activity inference with DoRothEA (regulon has to be built prior to this)
 
 run_dorothea = function(case, control, diff.indir, out.dir, dorothea_regulon_human, regulon){

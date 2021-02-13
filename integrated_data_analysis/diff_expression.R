@@ -8,6 +8,7 @@ library(Seurat)
 library(dplyr)
 library(ggplot2)
 indir = '~/sciebo/CovidEpiMap/integrated/'
+outdir = '~/sciebo/CovidEpiMap/diff_expression/diff_genes/'
 source('sc_source/sc_source.R')
 
 
@@ -27,61 +28,35 @@ for (cell.type in cell.types){
 	control = 'healthy'
 
 	markers = get_markers(sc, condition = condition, 
-		control = control, cell.type = cell.type)
-
-	top_heatmap(sc, markers = markers, cell.type = cell.type, 
-		disease = condition, control = control, n = 15)
-
+		control = control, 
+		cell.type = cell.type,
+		out.dir = outdir)
 
 	# Healthy vs active severe
 	condition = 'active_severe'
 	control = 'healthy'
 
 	markers = get_markers(sc, condition = condition, 
-		control = control, cell.type = cell.type)
-	
-	top_heatmap(sc, markers = markers, cell.type = cell.type, 
-		disease = condition, control = control, n = 15)
-
+	                      control = control, 
+	                      cell.type = cell.type,
+	                      out.dir = outdir)
 
 	# Mild vs severe active
 	condition = 'active_severe'
 	control = 'active_mild'
 
 	markers = get_markers(sc, condition = condition, 
-		control = control, cell.type = cell.type)
-	
-	top_heatmap(sc, markers = markers, cell.type = cell.type, 
-		disease = condition, control = control, n = 15)
-
+	                      control = control, 
+	                      cell.type = cell.type,
+	                      out.dir = outdir)
 
 	# Mild vs severe recovered
 	condition = 'recovered_severe'
 	control = 'recovered_mild'
-
-	markers = get_markers(sc, condition = condition, 
-		control = control, cell.type = cell.type)
 	
-	top_heatmap(sc, markers = markers, cell.type = cell.type, 
-		disease = condition, control = control, n = 15)
+	markers = get_markers(sc, condition = condition, 
+	                      control = control, 
+	                      cell.type = cell.type,
+	                      out.dir = outdir)
 }
-
-
-# Global DE between COVID vs NON-COVID
-outdir = '~/sciebo/CovidEpiMap/diff_expression/'
-Idents(sc) = 'COVID'
-condition = 'COVID'
-control = 'NON-COVID'
-
-markers = FindMarkers(sc, ident.1 = condition, 
-                      ident.2 = control, 
-                      min.pct = 0.25, 
-                      logfc.threshold = 0)
-markers$gene = rownames(markers)
-
-write.table(markers[,c(6, 1:5)], 
-           file = paste0(outdir, 'integrated.diff.genes.', condition, '.vs.', control, '.txt'),
-           quote = FALSE, 
-           sep = '\t', 
-           row.names = FALSE)
 

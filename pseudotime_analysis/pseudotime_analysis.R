@@ -153,6 +153,7 @@ subset = subset(sc.subset, condition %in% c('active_mild', 'active_severe'))
 subset = FindVariableFeatures(subset, nfeatures = 10000, verbose = FALSE)
 var.genes = VariableFeatures(subset)
 subset = subset(subset, features = var.genes)
+subset$condition = droplevels(subset$condition)
 
 
 
