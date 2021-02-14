@@ -155,7 +155,7 @@ saveRDS(sc.all, file = paste0(indir, 'integrated.RNA.Tcells.annotated.rds'))
 
 #---- Count unique binding cells
 
-dextramers_select = c('A0101_2', 'A0201_4', 'A0201_6')
+dextramers_select = c('A0101_2', 'A0201_4', 'A0201_6', 'A1101_29')
 outdir = '~/sciebo/CovidEpiMap/epitope_analysis/binding_counts_unique/'
 
 for (i in 1:length(dextramers_select)){

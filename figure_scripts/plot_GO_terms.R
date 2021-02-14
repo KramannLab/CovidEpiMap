@@ -143,9 +143,11 @@ term.list = list('lineage1' = c('GO Viral gene expression',
                                 'GO Defense response',
                                 'GO Cell activation',
                                 'GO Apoptotic process'),
-                 'lineage2' = c('GO Regulation of Natural Killer cell activation',
-                                'GO Positive regulation of natural killer cell mediated immunity',
-                                'GO Positive regulation of cytokine production involved in immune response')) 
+                 'lineage2' = c('GO Response to cytokine',
+                                'GO Innate immune response',
+                                'GO Immune effector process',
+                                'GO Defense response to other organism',
+                                'GO Cell activation')) 
 
 for (lineage in names(term.list)){
   # Get selected terms
@@ -168,43 +170,17 @@ for (lineage in names(term.list)){
 }
 
 
-# Lineage split test
-term.list = list('lineage_split_test' = c('GO Regulation of Natural Killer Cell Activation',
-                                          'GO Positive regulation of natural killer cell mediated immunity',
-                                          'GO Positive regulation of cytokine production involved in immune response'))
-
-for (comp in names(term.list)){
-  # Get selected terms
-  terms = term.list[[comp]]
-  
-  # Read data
-  gse = read.table(file = paste0(in.dir, comp, '/', comp, '_gsea_C5_BP.txt'),
-                   header = TRUE, sep = '\t')
-  gse = gse[complete.cases(gse),]
-  
-  plot.list[[comp]] = plot_go_nice(gse = gse, terms = terms, title = comp)
-  
-  if (nrow(gse[gse$padj < 0.05,]) > 0){
-    gse = gse[gse$padj < 0.05,]
-    gse = gse[order(gse$NES, decreasing= TRUE),]
-    terms = gse$pathway
-    all.plot.list[[comp]] = plot_go_nice(gse = gse, terms = head(terms,30), title = comp)
-  }
-}
-
-
 # Condition test
 comp = 'condition_test'
 
 term.list = list('lineage1' = c('GO Viral gene expression',
                                 'GO Translational initiation',
-                                'GO Cytoplasmic translation',
-                                'GO Innate Immune response',
-                                'GO Defense response'),
-                 'lineage2' = c('GO Regulation of Natural Killer cell activation',
-                                'GO Positive regulation of Natural Killer cell mediated immunity',
-                                'GO Positive regulation of cytokine production involved in immune response',
-                                'GO Regulation of Natural Killer cell mediated immunity'))
+                                'GO Innate immune response',
+                                'GO Regulation of immune system process',
+                                'GO Immune effector process',
+                                'GO Defense response to other organism',
+                                'GO Defense response',
+                                'GO Adaptive immune response'))
 
 
 for (lineage in names(term.list)){

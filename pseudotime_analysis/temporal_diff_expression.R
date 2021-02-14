@@ -66,11 +66,65 @@ start.genes.2 = rownames(sig.subset.2[order.2,])
 file.prefix.1 = 'start_vs_end_test_lineage1'
 file.prefix.2 = 'start_vs_end_test_lineage2'
 
-plot_top_genes(gene.set = start.genes.1, model = sce, n = 30, 
-				out.dir = outdir, file.name = paste0(file.prefix.1, '_top_genes'))
+plot_top_genes(gene.set = start.genes.1, 
+               model = sce,
+               n = 30, 
+               out.dir = outdir, 
+               file.name = paste0(file.prefix.1, '_top_genes'))
 
-plot_top_genes(gene.set = start.genes.2, model = sce, n = 30, 
-				out.dir = outdir, file.name = paste0(file.prefix.2, '_top_genes'))
+plot_top_genes(gene.set = start.genes.2, 
+               model = sce, 
+               n = 30,
+               out.dir = outdir, 
+               file.name = paste0(file.prefix.2, '_top_genes'))
+
+
+# Heatmap of top genes 
+genes = unique(start.genes.1, start.genes.2)
+genes = rev(c(genes[1:70], 'IFITM3'))
+n = 50
+smooth = predictSmooth(sce, gene = genes, nPoints = n, tidy = FALSE)
+smooth = smooth[,c((3*n+1):(n*4),(n+1):(2*n),(2*n+1):(3*n),1:n)]
+
+# Annotations for columns
+col.data = data.frame(data = colnames(smooth))
+col.data$lineage = c(rep('lineage 2', 2*n), rep('lineage 1', 2*n))
+col.data$condition = c(rep(c(rep('active severe', n), rep('active mild', n)),2))
+rownames(col.data) = col.data$data
+col.data$data = NULL
+
+# Annotation colours
+annotation.colors = list(lineage = c('lineage 1' = viridis(20)[10],
+                                     'lineage 2' = viridis(20)[17]),
+                         condition = c('active mild' = viridis(2)[1],
+                                       'active severe' = viridis(2)[2]))
+
+# Define colour palette
+paletteLength = 100
+myColor = colorRampPalette(c(viridis(paletteLength)[1], 
+                             'white', 
+                             viridis(paletteLength)[paletteLength]))(paletteLength)
+
+smooth = scale(t(smooth))
+myBreaks = c(seq(min(smooth), 0, 
+                 length.out = ceiling(paletteLength/2) + 1),
+             seq(max(smooth)/paletteLength, 
+                 max(smooth), 
+                 length.out = floor(paletteLength/2)))
+
+pdf(file = paste0(outdir, 'start_vs_end_test_DEG_heatmap.pdf'), width = 5, height = 5.5)
+pheatmap(t(smooth),
+         cluster_cols = FALSE,
+         show_rownames = TRUE, 
+         show_colnames = FALSE,
+         breaks = myBreaks,
+         fontsize_row = 6,
+         treeheight_row = 0,
+         annotation_col = col.data[c('condition', 'lineage')],
+         color = myColor,
+         annotation_colors = annotation.colors,
+         border = NA)
+dev.off()
 
 
 # GSEA
@@ -141,14 +195,18 @@ write.table(end.order[,c(6,1:5)],
 # Plot top ranking genes
 file.prefix = 'diff_end_test'
 
-plot_top_genes(gene.set = end.genes, model = sce, n = length(end.genes), 
-				out.dir = outdir, file.name = paste0(file.prefix, '_top_genes'))
+plot_top_genes(gene.set = end.genes, 
+               model = sce, 
+               n = 30,
+               out.dir = outdir, 
+               file.name = paste0(file.prefix, '_top_genes'))
 
 
 # GSEA
 stats = end.order$waldStat
 names(stats) = rownames(end.order)
 stats = stats[!is.na(stats)]
+
 
 # GO
 run_gsea(bg.genes = bg.genes, stats = stats, 
@@ -191,8 +249,11 @@ write.table(split.order[,c(6,1:5)],
 
 # Plot top ranking genes
 file.prefix = 'lineage_split_test'
-plot_top_genes(gene.set = split.genes, model = sce, n = length(split.genes), 
-				out.dir = outdir, file.name = paste0(file.prefix, '_top_genes'))
+plot_top_genes(gene.set = split.genes, 
+               model = sce,
+               n = length(split.genes),
+               out.dir = outdir, 
+               file.name = paste0(file.prefix, '_top_genes'))
 
 
 # GSEA
@@ -249,60 +310,11 @@ genes.2 = rownames(sig.subset.2[order.2,])
 file.prefix.1 = 'condition_test_lineage1'
 file.prefix.2 = 'condition_test_lineage2'
 
-plot_top_genes(gene.set = genes.1, model = sce, n = 100, 
+plot_top_genes(gene.set = genes.1, model = sce, n = 30, 
 				out.dir = outdir, file.name = paste0(file.prefix.1, '_top_genes'))
 
 plot_top_genes(gene.set = genes.2, model = sce, n = length(genes.2), 
 				out.dir = outdir, file.name = paste0(file.prefix.2, '_top_genes'))
-
-
-# Heatmap of top genes 
-# l1, am : 1:25, l2, am: 26:50, l1, as: 51:75, l2, as: 76:100
-genes = unique(genes.1, genes.2)
-smooth = predictSmooth(sce, gene = genes, nPoints = 25, tidy = FALSE)
-smooth = smooth[,c(76:100,26:50,51:75,1:25)]
-
-# Annotations for columns
-col.data = data.frame(data = colnames(smooth))
-col.data$lineage = c(rep('lineage 2', 50), rep('lineage 1', 50))
-col.data$condition = c(rep(c(rep('active severe', 25), rep('active mild', 25)),2))
-rownames(col.data) = col.data$data
-col.data$data = NULL
-
-# Annotation colours
-
-annotation.colors = list(lineage = c('lineage 1' = viridis(20)[10],
-                                     'lineage 2' = viridis(20)[17]),
-                         condition = c('active mild' = viridis(20)[6],
-                                       'active severe' = viridis(20)[20]))
-
-# Define colour palette
-paletteLength = 100
-myColor = colorRampPalette(c(viridis(paletteLength)[1], 
-                             'white', 
-                             viridis(paletteLength)[paletteLength]))(paletteLength)
-
-smooth = scale(t(smooth))
-myBreaks = c(seq(min(smooth), 0, 
-                    length.out = ceiling(paletteLength/2) + 1),
-                seq(max(smooth)/paletteLength, 
-                    max(smooth), 
-                    length.out = floor(paletteLength/2)))
-
-pdf(file = paste0(outdir, 'condition_test_DEG_heatmap.pdf'), width = 5, height = 5.5)
-pheatmap(t(smooth),
-         cluster_cols = FALSE,
-         show_rownames = TRUE, 
-         show_colnames = FALSE,
-         breaks = myBreaks,
-         fontsize_row = 3,
-         fontsize_col = 2,
-         treeheight_row = 0,
-         annotation_col = col.data[c('condition', 'lineage')],
-         color = myColor,
-         annotation_colors = annotation.colors,
-         border = NA)
-dev.off()
 
 
 # GSEA

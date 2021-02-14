@@ -224,11 +224,11 @@ dev.off()
 
 #---- Bar chart of unique dextramer binding counts (condition collapsed)
 
-# Make dextramer unique binding counts data frame
+# Make dextramer unique binding counts data frame for dextramers with unique binding
 indir = '~/sciebo/CovidEpiMap/epitope_analysis/binding_counts_unique/'
 cell.types = names(cell.type.colors)
 cell.types = cell.types[cell.types %ni% c('Gamma Delta T cells', 'MAIT cells', 'Atypical NKT cells')]
-dextramers = c('A0101_2', 'A0201_4', 'A0201_6')
+dextramers = c('A0101_2', 'A0201_4', 'A0201_6', 'A1101_29')
 counts = data.frame(cell.type = rep(cell.types, 3), 
                     condition = rep(c('healthy', 'mild', 'severe'), each = length(cell.types)))
 
@@ -246,12 +246,12 @@ counts = counts[counts$cell.type %in% cell.types,]
 counts$condition = factor(counts$condition, levels = c('healthy', 'mild', 'severe'))
 
 # Plot
-pdf(file = paste0(indir, 'unique_binding_counts.pdf'), width = 7, height = 4)
+pdf(file = paste0(indir, 'unique_binding_counts.pdf'), width = 8, height = 4)
 ggplot(counts) +
   geom_bar(aes(x = reorder_within(cell.type, -count, dextramer), y = count, fill = condition),
            stat = 'identity') +
   scale_x_reordered() +
-  facet_wrap(~ dextramer, scales = 'free') +
+  facet_wrap(~ dextramer, scales = 'free', nrow = 1) +
   scale_fill_viridis(discrete = TRUE) +
   theme_cowplot() +
   theme(axis.title.x = element_blank(),
@@ -291,12 +291,12 @@ counts = counts[counts$cell.type %in% cell.types,]
 counts$patient = factor(counts$patient, levels = patients)
 
 # Plot
-pdf(file = paste0(indir, 'unique_binding_counts_patient.pdf'), width = 7, height = 4.5)
+pdf(file = paste0(indir, 'unique_binding_counts_patient.pdf'), width = 8, height = 4.5)
 ggplot(counts) +
   geom_bar(aes(x = reorder_within(cell.type, -count, dextramer), y = count, fill = patient),
            stat = 'identity') +
   scale_x_reordered() +
-  facet_wrap(~ dextramer, scales = 'free') +
+  facet_wrap(~ dextramer, scales = 'free', nrow = 1) +
   scale_fill_viridis(discrete = TRUE) +
   theme_cowplot() +
   theme(axis.title.x = element_blank(),

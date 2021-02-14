@@ -184,30 +184,30 @@ dev.off()
 sc.subset = CellCycleScoring(sc.subset, s.features = cc.genes$s.genes, 
 							g2m.features = cc.genes$g2m.genes)
 
-pdf(file = paste0(outdir, 'integrated_Tcells_cell_cycle_score.pdf'), width = 7, height = 4)
+pdf(file = paste0(outdir, 'integrated_Tcells_cell_cycle_score.pdf'), width = 4, height = 4)
 VlnPlot(sc.subset, features = 'S.Score', 
         pt.size = 0, 
-        split.by = 'condition', 
-        cols = viridis(5)) +
+        group.by = 'integrated_annotations', 
+        cols = cell.type.colors) +
   theme(text = element_text(size = 8),
         axis.ticks = element_blank(),
         axis.text.x = element_text(size = 8, angle = 90),
         axis.text.y = element_text(size = 8),
         axis.title.x = element_blank()) +
-  labs(y = 'S cell cycle score',
-       fill = 'Condition') +
+  labs(y = 'S cell cycle score') +
+  NoLegend() +
   ggtitle('')
 VlnPlot(sc.subset, features = 'G2M.Score', 
         pt.size = 0, 
-        split.by = 'condition', 
-        cols = viridis(5)) +
+        group.by = 'integrated_annotations', 
+        cols = cell.type.colors) +
   theme(text = element_text(size = 8),
         axis.ticks = element_blank(),
         axis.text.x = element_text(size = 8, angle = 90),
         axis.text.y = element_text(size = 8),
         axis.title.x = element_blank()) +
-  labs(y = 'G2M cell cycle score',
-       fill = 'Condition') +
+  labs(y = 'G2M cell cycle score') +
+  NoLegend() +
   ggtitle('')
 dev.off()
 
