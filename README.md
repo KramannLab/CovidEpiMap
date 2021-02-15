@@ -1,5 +1,5 @@
-# CovidEpiMap
-Single cell epitope mapping in COVID-19 
+# Dissecting CD8+ T cell pathology of severe SARS-CoV-2 infection by single-cell epitope mapping
 
+## Summary
 
-.. More to come.
+The current SARS-CoV-2 pandemic represents a global challenge. A better understanding of the immune response against SARS-CoV-2 is key to understanding the major differences in disease severity after infection, in addition to the development or adjustment of vaccines given the recently increased prevalence of mutated SARS-CoV-2 variants. Feature barcode technology combined with CITE-seq antibodies and DNA-barcoded peptide-MHC I Dextramer reagents enabled us to identify relevant SARS-CoV-2-derived CD8+ T cell epitopes and compare epitope-specific CD8+ T cell populations between mildly and severely affected COVID-19 patients. We identified a strong CD8+ T cell response directed towards an S protein derived epitope. CD8+ effector T cells displayed combined characteristics of highly differentiated effector and memory cells with an efficient response to interferon-stimulation in mild COVID-19, while CD8+ effector cells in severe COVID-19 displayed a hyperactivated phenotype, an impaired interferon response and increased T cell exhaustion. Our results identify A*0101 WTAGAAAYY as an immunogenic CD8+ T cell epitope with the ability to drive clonal expansion and potential functional relevance for antiviral defense. We provide an in-depth characterization of the CD8+ T cell mediated response to SARS-CoV-2 infection which will be relevant for the development of molecular and targeted therapies and potential adjustments of vaccination strategies.
