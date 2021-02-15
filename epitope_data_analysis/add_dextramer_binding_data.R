@@ -4,6 +4,9 @@
 
 #---- Add dextramer-binding data to Seurat object
 
+# Source for binding concordance (10x Genomics)
+# https://www.10xgenomics.com/resources/application-notes/a-new-way-of-exploring-immunity-linking-highly-multiplexed-antigen-recognition-to-immune-repertoire-and-phenotype/
+
 library(Seurat)
 library(dplyr)
 library(stringr)
